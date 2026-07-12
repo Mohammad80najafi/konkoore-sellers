@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { User } from "@/lib/types";
 
 const navItems = [
   {
@@ -53,8 +54,19 @@ const navItems = [
   },
 ];
 
-export default function MobileNav() {
+interface MobileNavProps {
+  currentUser?: User | null;
+}
+
+export default function MobileNav({ currentUser }: MobileNavProps) {
   const pathname = usePathname();
+
+  const items = navItems.map((item) => {
+    if (item.href === "/dashboard" && !currentUser) {
+      return { ...item, href: "/login" };
+    }
+    return item;
+  });
 
   return (
     <nav
@@ -62,7 +74,7 @@ export default function MobileNav() {
       aria-label="ناوبری موبایل"
     >
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive = pathname === item.href;
 
           if (item.isSpecial) {

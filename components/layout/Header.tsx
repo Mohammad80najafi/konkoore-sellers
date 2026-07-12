@@ -5,6 +5,8 @@ import Link from "next/link";
 import Logo from "./Logo";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import type { User } from "@/lib/types";
+import { logoutAction } from "@/lib/auth-actions";
 
 const navLinks = [
   { href: "/marketplace", label: "بازار کتاب" },
@@ -12,9 +14,21 @@ const navLinks = [
   { href: "/about", label: "درباره ما" },
 ];
 
-export default function Header() {
+interface HeaderProps {
+  currentUser?: User | null;
+}
+
+export default function Header({ currentUser }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleLogout = async () => {
+    const res = await logoutAction();
+    if (res.success) {
+      window.location.href = "/";
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-surface-200/50">
@@ -99,11 +113,66 @@ export default function Header() {
             </Link>
 
             {/* User/Login */}
-            <Link href="/login">
-              <Button variant="outline" size="sm">
-                ورود
-              </Button>
-            </Link>
+            {currentUser ? (
+              <div className="relative">
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 p-1.5 px-3 rounded-xl hover:bg-surface-100 transition-colors text-right cursor-pointer select-none"
+                  aria-label="منوی کاربری"
+                >
+                  <div className="w-8 h-8 rounded-full bg-navy-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                    {currentUser.name ? currentUser.name.split(" ").map(w => w[0]).join("").slice(0, 2) : "U"}
+                  </div>
+                  <span className="hidden md:inline text-sm font-semibold text-surface-800">
+                    {currentUser.name}
+                  </span>
+                  <svg
+                    className={cn("w-4 h-4 text-surface-500 transition-transform", userDropdownOpen && "rotate-180")}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {userDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setUserDropdownOpen(false)} />
+                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-xl border border-surface-200/60 shadow-elevated p-1.5 z-20 animate-scale-in">
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-700 hover:bg-surface-50 hover:text-navy-700 rounded-lg transition-colors font-medium"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        داشبورد من
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleLogout();
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-danger-600 hover:bg-danger-50 rounded-lg transition-colors text-right font-semibold cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        خروج از حساب
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  ورود
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile menu toggle */}
             <button
