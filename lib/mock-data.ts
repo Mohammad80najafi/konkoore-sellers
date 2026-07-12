@@ -881,31 +881,4 @@ export const mockListings: Listing[] = [
   },
 ];
 
-// Helper to get featured/recent listings
-export function getRecentListings(count = 8): Listing[] {
-  return [...mockListings]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, count);
-}
 
-export function getBundleListings(): Listing[] {
-  return mockListings.filter((l) => l.isBundle);
-}
-
-export function getListingsByField(field: string, count = 8): Listing[] {
-  return mockListings.filter((l) => l.book.field === field).slice(0, count);
-}
-
-export function getListingById(id: string): Listing | undefined {
-  return mockListings.find((l) => l._id === id);
-}
-
-export function getRecommendedListings(count = 8): Listing[] {
-  return [...mockListings]
-    .sort((a, b) => b.views - a.views)
-    .slice(0, count);
-}
-
-export function getSellerListings(sellerId: string): Listing[] {
-  return mockListings.filter((l) => l.seller._id === sellerId);
-}

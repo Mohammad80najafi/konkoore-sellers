@@ -10,6 +10,16 @@ export function toPersianDigits(num: number | string): string {
   return String(num).replace(/\d/g, (d) => persianDigits[parseInt(d)]);
 }
 
+const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+
+export function normalizeDigits(str: string): string {
+  let result = str;
+  for (let i = 0; i < 10; i++) {
+    result = result.replaceAll(persianDigits[i], String(i)).replaceAll(arabicDigits[i], String(i));
+  }
+  return result;
+}
+
 // ===== Price Formatting =====
 export function formatPrice(price: number): string {
   const formatted = price.toLocaleString("fa-IR");

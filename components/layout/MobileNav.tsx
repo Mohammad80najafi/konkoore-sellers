@@ -63,7 +63,7 @@ export default function MobileNav({ currentUser }: MobileNavProps) {
 
   const items = navItems.map((item) => {
     if (item.href === "/dashboard" && !currentUser) {
-      return { ...item, href: "/login" };
+      return { ...item, href: "/auth/login" };
     }
     return item;
   });

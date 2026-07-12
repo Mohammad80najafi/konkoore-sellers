@@ -7,7 +7,8 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Logo from "@/components/layout/Logo";
 import { mockUsers } from "@/lib/mock-data";
-import { loginAction, checkUserAction } from "@/lib/auth-actions";
+import { loginAction, checkUserAction, sendOtpAction } from "@/lib/auth-actions";
+import { normalizeDigits } from "@/lib/utils";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,17 +43,7 @@ export default function LoginPage() {
 
   // Handle phone number input with character normalization
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value;
-    
-    // Normalize Persian/Arabic digits to English
-    const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
-    const arabicDigits = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
-    for (let i = 0; i < 10; i++) {
-      val = val.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
-    }
-    
-    // Only keep digits
-    const cleaned = val.replace(/\D/g, "");
+    const cleaned = normalizeDigits(e.target.value).replace(/\D/g, "");
     
     // Max 11 digits
     if (cleaned.length <= 11) {
@@ -88,6 +79,7 @@ export default function LoginPage() {
       setIsRegistering(false);
       setStep(2);
       setTimer(120);
+      await sendOtpAction(phoneNumber);
       // Auto focus on first OTP box
       setTimeout(() => {
         otpRefs[0].current?.focus();
@@ -99,7 +91,7 @@ export default function LoginPage() {
   };
 
   // Step 1.5: Submit Full Name
-  const handleNameSubmit = (e: React.FormEvent) => {
+  const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !fullName.trim()) {
       setError("لطفاً نام و نام خانوادگی خود را وارد کنید.");
@@ -113,6 +105,7 @@ export default function LoginPage() {
     setError(null);
     setStep(2);
     setTimer(120);
+    await sendOtpAction(phoneNumber);
 
     // Auto focus on first OTP box
     setTimeout(() => {
@@ -122,16 +115,7 @@ export default function LoginPage() {
 
   // OTP inputs value change handler
   const handleOtpChange = (index: number, value: string) => {
-    let val = value;
-    
-    // Normalize Persian/Arabic digits
-    const persianDigits = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
-    const arabicDigits = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
-    for (let i = 0; i < 10; i++) {
-      val = val.replace(persianDigits[i], String(i)).replace(arabicDigits[i], String(i));
-    }
-    
-    const cleaned = val.replace(/\D/g, "");
+    const cleaned = normalizeDigits(value).replace(/\D/g, "");
     
     if (cleaned.length > 1) {
       // Handle pasted values
@@ -182,7 +166,7 @@ export default function LoginPage() {
     setError(null);
 
     // Call server action to perform authentication
-    const result = await loginAction(phoneNumber, isRegistering ? fullName : undefined);
+    const result = await loginAction(phoneNumber, code, isRegistering ? fullName : undefined);
     
     setTimeout(() => {
       setIsLoading(false);
@@ -190,8 +174,7 @@ export default function LoginPage() {
         setLoginSuccess(true);
         // Redirect to homepage or previous page after success animation
         setTimeout(() => {
-          router.push("/");
-          router.refresh();
+          window.location.href = "/";
         }, 1500);
       } else {
         setError(result.error || "کد وارد شده صحیح نیست.");
@@ -199,18 +182,16 @@ export default function LoginPage() {
     }, 1200);
   };
 
-  // Resend code simulation
-  const handleResendCode = () => {
+  // Resend code
+  const handleResendCode = async () => {
     if (!canResend) return;
     setIsLoading(true);
     setError(null);
-    
-    setTimeout(() => {
-      setIsLoading(false);
-      setTimer(120);
-      setOtpCode(["", "", "", ""]);
-      otpRefs[0].current?.focus();
-    }, 800);
+    await sendOtpAction(phoneNumber);
+    setIsLoading(false);
+    setTimer(120);
+    setOtpCode(["", "", "", ""]);
+    otpRefs[0].current?.focus();
   };
 
   // Developer Helper: auto fill phone and select mock user
@@ -497,31 +478,33 @@ export default function LoginPage() {
           )}
         </div>
 
-        {/* Collapsible Developer Helper */}
-        <div className="mt-8 w-full max-w-md animate-slide-up">
-          <details className="bg-white/80 backdrop-blur-sm border border-surface-200/80 rounded-2xl p-4 shadow-sm cursor-pointer group">
-            <summary className="text-xs font-semibold text-surface-600 select-none flex items-center justify-between">
-              <span>🛠️ راهنمای توسعه‌دهنده (تست ورود و ثبت‌نام)</span>
-              <span className="text-[10px] text-surface-400 transition-transform group-open:rotate-180">▼</span>
-            </summary>
-            <div className="mt-4 space-y-2 max-h-44 overflow-y-auto pr-1">
-              <p className="text-[11px] text-surface-500 leading-relaxed mb-2">
-                <strong>تست ورود:</strong> روی یکی از کاربران زیر کلیک کنید تا شماره آن‌ها وارد شده و فرآیند ورود شبیه‌سازی شود.<br />
-                <strong>تست ثبت‌نام:</strong> یک شماره جدید فرضی وارد کنید (مثلاً شماره خودتان یا شماره‌ای که در لیست زیر نیست) تا صفحه ثبت‌نام نام و نام خانوادگی نمایش داده شود.
-              </p>
-              {mockUsers.map((user) => (
-                <div
-                  key={user._id}
-                  onClick={() => handleSelectMockUser(user.phone || "")}
-                  className="p-2.5 bg-surface-50 hover:bg-navy-50/50 border border-surface-100 hover:border-navy-200/50 rounded-xl text-xs flex justify-between items-center transition-all cursor-pointer"
-                >
-                  <span className="font-semibold text-surface-700">{user.name}</span>
-                  <span className="font-mono text-surface-500 font-semibold">{user.phone}</span>
-                </div>
-              ))}
-            </div>
-          </details>
-        </div>
+        {/* Collapsible Developer Helper — dev only */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mt-8 w-full max-w-md animate-slide-up">
+            <details className="bg-white/80 backdrop-blur-sm border border-surface-200/80 rounded-2xl p-4 shadow-sm cursor-pointer group">
+              <summary className="text-xs font-semibold text-surface-600 select-none flex items-center justify-between">
+                <span>🛠️ راهنمای توسعه‌دهنده (تست ورود و ثبت‌نام)</span>
+                <span className="text-[10px] text-surface-400 transition-transform group-open:rotate-180">▼</span>
+              </summary>
+              <div className="mt-4 space-y-2 max-h-44 overflow-y-auto pr-1">
+                <p className="text-[11px] text-surface-500 leading-relaxed mb-2">
+                  <strong>تست ورود:</strong> روی یکی از کاربران زیر کلیک کنید تا شماره آن‌ها وارد شده و فرآیند ورود شبیه‌سازی شود.<br />
+                  <strong>تست ثبت‌نام:</strong> یک شماره جدید فرضی وارد کنید (مثلاً شماره خودتان یا شماره‌ای که در لیست زیر نیست) تا صفحه ثبت‌نام نام و نام خانوادگی نمایش داده شود.
+                </p>
+                {mockUsers.map((user) => (
+                  <div
+                    key={user._id}
+                    onClick={() => handleSelectMockUser(user.phone || "")}
+                    className="p-2.5 bg-surface-50 hover:bg-navy-50/50 border border-surface-100 hover:border-navy-200/50 rounded-xl text-xs flex justify-between items-center transition-all cursor-pointer"
+                  >
+                    <span className="font-semibold text-surface-700">{user.name}</span>
+                    <span className="font-mono text-surface-500 font-semibold">{user.phone}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
+        )}
         
       </div>
     </div>

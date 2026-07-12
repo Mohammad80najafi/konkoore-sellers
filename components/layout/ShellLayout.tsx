@@ -1,9 +1,9 @@
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import MobileNav from "@/components/layout/MobileNav";
+import Header from "./Header";
+import Footer from "./Footer";
+import MobileNav from "./MobileNav";
 import { getCurrentUser } from "@/lib/auth-actions";
 
-export default async function MainLayout({
+export default async function ShellLayout({
   children,
 }: {
   children: React.ReactNode;
