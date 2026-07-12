@@ -345,6 +345,7 @@ export async function createListingAction(data: {
   coverDamaged?: boolean;
   hasCd?: boolean;
   hasSupplement?: boolean;
+  images?: { url: string; alt: string; isPrimary: boolean }[];
 }): Promise<{ success: boolean; listingId?: string; error?: string }> {
   try {
     const sellerId = await assertAuthenticated();
@@ -399,7 +400,11 @@ export async function createListingAction(data: {
         hasCd: data.hasCd || false,
         hasSupplement: data.hasSupplement || false,
       },
-      images: [],
+      images: data.images?.map((img, i) => ({
+        url: img.url,
+        alt: img.alt || "",
+        isPrimary: i === 0,
+      })) || [],
       description: data.description || "",
       year: data.year,
       edition: data.edition || 0,

@@ -136,6 +136,7 @@ export default function CreateListingForm() {
       coverDamaged,
       hasCd,
       hasSupplement,
+      images: images.map((url, i) => ({ url, alt: `${title} - ${i + 1}`, isPrimary: i === 0 })),
     });
 
     setIsLoading(false);

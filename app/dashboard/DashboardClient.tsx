@@ -9,18 +9,7 @@ import Input from "@/components/ui/Input";
 import type { User, Listing } from "@/lib/types";
 import { updateProfileAction, updateListingStatusAction } from "@/lib/auth-actions";
 import { toPersianDigits, formatPrice, toJalali } from "@/lib/utils";
-
-// Mock Persian Provinces and Cities
-const PROVINCE_CITIES: Record<string, string[]> = {
-  "تهران": ["تهران", "ری", "کرج", "ورامین", "شهریار", "قدس", "پاکدشت"],
-  "اصفهان": ["اصفهان", "کاشان", "خمینی‌شهر", "نجف‌آباد", "شاهین‌شهر", "فولادشهر"],
-  "فارس": ["شیراز", "مرودشت", "جهرم", "فسا", "کازرون", "داراب"],
-  "خراسان رضوی": ["مشهد", "سبزوار", "نیشابور", "تربت حیدریه", "قوچان", "کاشمر"],
-  "آذربایجان شرقی": ["تبریز", "مراغه", "مرند", "میانه", "اهر", "بناب"],
-  "مازندران": ["ساری", "بابل", "آمل", "قائم‌شهر", "بهشهر", "چالوس"],
-  "یزد": ["یزد", "میبد", "اردکان", "بافق", "ابرکوه"],
-  "خوزستان": ["اهواز", "دزفول", "آبادان", "خرمشهر", "اندیمشک", "ماهشهر"],
-};
+import { PROVINCES } from "@/lib/constants";
 
 interface DashboardClientProps {
   currentUser: User;
@@ -44,13 +33,17 @@ export default function DashboardClient({ currentUser, initialListings }: Dashbo
   // Action Loading States for Listing Status update
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
+  const selectedProvinceData = PROVINCES.find((p) => p.name === selectedProvince);
+  const cities = selectedProvinceData?.cities || [];
+
   // Handle Province change and auto select first city
   const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const prov = e.target.value;
     setSelectedProvince(prov);
-    const cities = PROVINCE_CITIES[prov] || [];
-    if (cities.length > 0) {
-      setSelectedCity(cities[0]);
+    const provinceData = PROVINCES.find((p) => p.name === prov);
+    const newCities = provinceData?.cities || [];
+    if (newCities.length > 0 && newCities[0]) {
+      setSelectedCity(newCities[0]);
     }
   };
 
@@ -382,8 +375,8 @@ export default function DashboardClient({ currentUser, initialListings }: Dashbo
                     onChange={handleProvinceChange}
                     className="w-full rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm text-surface-800 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none transition-all duration-200 cursor-pointer"
                   >
-                    {Object.keys(PROVINCE_CITIES).map((p) => (
-                      <option key={p} value={p}>{p}</option>
+                    {PROVINCES.map((p) => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
                     ))}
                   </select>
                 </div>
@@ -399,7 +392,7 @@ export default function DashboardClient({ currentUser, initialListings }: Dashbo
                     }}
                     className="w-full rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm text-surface-800 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none transition-all duration-200 cursor-pointer"
                   >
-                    {(PROVINCE_CITIES[selectedProvince] || []).map((c) => (
+                    {cities.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>

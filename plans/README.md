@@ -1,40 +1,42 @@
 # Improvement Plans
 
-Written against commit `9d48d7a` (2026-07-13).
+Written against commit `01da541` (2026-07-13).
 
 ## Execution Order
 
 | # | Plan | Category | Effort | Depends On |
 |---|------|----------|--------|------------|
-| 007 | Add listing detail page | Correctness | M | — |
-| 008 | Validate prices in createListingAction | Correctness | S | — |
-| 009 | Paginate getAllListings | Performance | S | — |
-| 010 | Add OTP rate limiting | Security | M | — |
-| 011 | Persistent OTP store (MongoDB) | Tech Debt | L | — |
-| 012 | Hide seller phone from API responses | Security | S | — |
+| 013 | Save images in createListingAction | Correctness | S | — |
+| 014 | Deduplicate province/city data | Tech Debt | S | — |
+| 015 | Custom 404 page | DX | S | — |
 
-**Recommended order:** 012 → 008 → 009 → 007 → 010 → 011
+**Recommended order:** 013 → 014 → 015
 
-Rationale: 012 and 008 are zero-risk single-file fixes. 009 is a small perf win. 007 is the largest feature but safe. 010 and 011 are security hardening that builds on existing OTP code.
+Rationale: 013 is a critical bug fix (images lost). 014 is a quick cleanup. 015 is a nice-to-have polish.
 
 ## Status
 
 | # | Status |
 |---|--------|
-| 007 | DONE |
-| 008 | DONE |
-| 009 | DONE |
-| 010 | DONE |
-| 011 | DONE |
-| 012 | DONE |
+| 013 | DONE |
+| 014 | DONE |
+| 015 | DONE |
 
-## Previous Plans (from 62314dd)
+## Previous Plans
 
 | # | Plan | Status |
 |---|------|--------|
-| 001 | Authorization guards on server actions | SUPERSEDED |
-| 002 | OTP verification (local code store) | SUPERSEDED |
-| 003 | Remove mock data from production login | SUPERSEDED |
-| 004 | Move prettier-plugin to devDependencies | SUPERSEDED |
-| 005 | Remove dead in-memory auth-store code | SUPERSEDED |
-| 006 | Deduplicate phone digit normalization | SUPERSEDED |
+| 007 | Add listing detail page | DONE |
+| 008 | Validate prices in createListingAction | DONE |
+| 009 | Paginate getAllListings | DONE |
+| 010 | Add OTP rate limiting | DONE |
+| 011 | Persistent OTP store (MongoDB) | DONE |
+| 012 | Hide seller phone from API responses | DONE |
+
+## Considered and Rejected
+
+| Finding | Reason |
+|---------|--------|
+| generateMetadata double-fetch | Low impact, Next.js caching handles this |
+| Year validation approximate conversion | Off by ~1 day at most, acceptable for book listings |
+| No input length validation | Client-side limits sufficient for this scale |
