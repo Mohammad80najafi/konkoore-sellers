@@ -29,7 +29,7 @@ function toListingType(doc: any): Listing {
       ? {
           _id: sellerDoc._id.toString(),
           name: sellerDoc.name,
-          phone: sellerDoc.phone,
+          // phone removed — PII not exposed to buyers
           avatar: sellerDoc.avatar,
           role: sellerDoc.role,
           isVerified: sellerDoc.isVerified,
@@ -133,13 +133,20 @@ export async function getListingById(id: string): Promise<Listing | null> {
   return toListingType(doc);
 }
 
-export async function getAllListings(): Promise<Listing[]> {
+export async function getAllListings(limit = 100, skip = 0): Promise<Listing[]> {
   await connectDB();
   const docs = await ListingModel.find({ status: "active" })
     .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
     .populate("seller")
     .lean();
   return docs.map(toListingType);
+}
+
+export async function getActiveListingCount(): Promise<number> {
+  await connectDB();
+  return ListingModel.countDocuments({ status: "active" });
 }
 
 export async function getPublishers(): Promise<Publisher[]> {

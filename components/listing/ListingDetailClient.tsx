@@ -1,0 +1,262 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { toPersianDigits } from "@/lib/utils";
+import { BOOK_CONDITIONS } from "@/lib/constants";
+import type { Listing } from "@/lib/types";
+
+const fieldLabels: Record<string, string> = {
+  experimental: "تجربی",
+  mathematics: "ریاضی",
+  humanities: "انسانی",
+  art: "هنر",
+  languages: "زبان",
+};
+
+const gradeLabels: Record<string, string> = {
+  "10": "دهم",
+  "11": "یازدهم",
+  "12": "دوازدهم",
+  konkoor: "کنکور",
+};
+
+export default function ListingDetailClient({ listing }: { listing: Listing }) {
+  const { book, price, originalPrice, condition, seller, city, province, isBundle, bundleBooks, description, year, edition, shippingAvailable, pickupAvailable, images } = listing;
+
+  const validImages = images?.filter((img) => img.url && img.url.trim() !== "") || [];
+  const [selectedImage, setSelectedImage] = useState(0);
+
+  const discount = originalPrice > price
+    ? Math.round(((originalPrice - price) / originalPrice) * 100)
+    : 0;
+
+  const conditionInfo = BOOK_CONDITIONS.find((c) => c.id === condition.grade);
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      {/* Breadcrumb */}
+      <nav className="mb-4 text-sm text-surface-500" aria-label="breadcrumb">
+        <Link href="/" className="hover:text-navy-600 transition-colors">خانه</Link>
+        <span className="mx-2 text-surface-300">/</span>
+        <Link href="/marketplace" className="hover:text-navy-600 transition-colors">بازار کتاب</Link>
+        <span className="mx-2 text-surface-300">/</span>
+        <span className="text-navy-700 font-medium line-clamp-1">{book.title}</span>
+      </nav>
+
+      <div className="grid md:grid-cols-5 gap-6">
+        {/* Main content — 3 cols */}
+        <div className="md:col-span-3 space-y-6">
+          {/* Image gallery */}
+          {validImages.length > 0 ? (
+            <div>
+              {/* Main image */}
+              <div className="rounded-2xl overflow-hidden bg-surface-100 mb-3">
+                <img
+                  src={validImages[selectedImage]?.url}
+                  alt={validImages[selectedImage]?.alt || book.title}
+                  className="w-full h-64 md:h-80 object-contain"
+                />
+              </div>
+              {/* Thumbnails */}
+              {validImages.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto scrollbar-hidden pb-1">
+                  {validImages.map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(index)}
+                      className={cn(
+                        "shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all cursor-pointer",
+                        selectedImage === index
+                          ? "border-navy-600 shadow-sm"
+                          : "border-surface-200 hover:border-surface-300 opacity-70 hover:opacity-100"
+                      )}
+                    >
+                      <img src={img.url} alt={img.alt || ""} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Placeholder when no images */
+            <div className="bg-gradient-to-br from-navy-50 via-surface-50 to-navy-100 rounded-2xl h-64 md:h-80 flex items-center justify-center">
+              <div className="text-center">
+                <span className="text-7xl opacity-30 block mb-2">📚</span>
+                <p className="text-xs text-surface-400">عکسی موجود نیست</p>
+              </div>
+            </div>
+          )}
+
+          {/* Title & badges */}
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="px-2.5 py-1 text-[11px] font-medium bg-navy-50 text-navy-700 rounded-lg">
+                {fieldLabels[book.field] || book.field}
+              </span>
+              <span className="px-2.5 py-1 text-[11px] font-medium bg-surface-100 text-surface-600 rounded-lg">
+                {gradeLabels[book.grade] || book.grade}
+              </span>
+              {isBundle && (
+                <span className="px-2.5 py-1 text-[11px] font-medium bg-accent-50 text-accent-700 rounded-lg">
+                  📦 پکیج ({bundleBooks?.length || 0} کتاب)
+                </span>
+              )}
+            </div>
+            <h1 className="text-xl md:text-2xl font-bold text-navy-800 leading-relaxed">{book.title}</h1>
+            <p className="text-sm text-surface-500 mt-1">{book.author} — {book.publisher.name}</p>
+          </div>
+
+          {/* Condition */}
+          <div className="bg-white rounded-2xl border border-surface-200 p-5">
+            <h2 className="text-sm font-bold text-navy-800 mb-3">وضعیت کتاب</h2>
+            <div className="flex items-center gap-3 mb-3">
+              <span className={cn("px-3 py-1.5 text-sm font-semibold rounded-lg", conditionInfo?.bgColor, conditionInfo?.color)}>
+                {conditionInfo?.label}
+              </span>
+              <span className="text-xs text-surface-500">{conditionInfo?.description}</span>
+            </div>
+
+            {/* Defects */}
+            <div className="flex flex-wrap gap-2">
+              {condition.highlighting && <DefectTag label="هایلایت" />}
+              {condition.handwrittenNotes && <DefectTag label="یادداشت" />}
+              {condition.tornPages && <DefectTag label="پارگی" />}
+              {condition.missingPages && <DefectTag label="صفحات گمشده" />}
+              {condition.answersCompleted && <DefectTag label="تست‌ها پاسخ داده شده" />}
+              {condition.coverDamaged && <DefectTag label="جلد آسیب‌دیده" />}
+              {condition.hasCd && <DefectTag label="سی‌دی دارد" />}
+              {condition.hasSupplement && <DefectTag label="کتاب تکمیلی" />}
+            </div>
+          </div>
+
+          {/* Bundle books */}
+          {isBundle && bundleBooks && bundleBooks.length > 0 && (
+            <div className="bg-white rounded-2xl border border-surface-200 p-5">
+              <h2 className="text-sm font-bold text-navy-800 mb-3">کتاب‌های پکیج</h2>
+              <div className="space-y-2">
+                {bundleBooks.map((b, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-surface-100 last:border-0">
+                    <div>
+                      <span className="text-sm font-medium text-navy-800">{b.title}</span>
+                      <span className="text-xs text-surface-500 mr-2">{b.author}</span>
+                    </div>
+                    <span className="text-xs text-surface-500">{b.publisher.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {description && (
+            <div className="bg-white rounded-2xl border border-surface-200 p-5">
+              <h2 className="text-sm font-bold text-navy-800 mb-3">توضیحات فروشنده</h2>
+              <p className="text-sm text-surface-600 leading-relaxed whitespace-pre-line">{description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar — 2 cols */}
+        <div className="md:col-span-2 space-y-4">
+          {/* Price card */}
+          <div className="bg-white rounded-2xl border border-surface-200 p-5 sticky top-24">
+            <div className="mb-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black text-navy-800">{toPersianDigits(price.toLocaleString("fa-IR"))}</span>
+                <span className="text-sm text-surface-500">تومان</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-surface-400 line-through">{toPersianDigits(originalPrice.toLocaleString("fa-IR"))}</span>
+                  <span className="text-xs font-bold text-success-600 bg-success-50 px-2 py-0.5 rounded-md">{toPersianDigits(discount)}٪ تخفیف</span>
+                </div>
+              )}
+            </div>
+
+            {/* Year & Edition */}
+            <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+              <div className="bg-surface-50 rounded-lg px-3 py-2">
+                <span className="text-[11px] text-surface-400 block">سال چاپ</span>
+                <span className="font-medium text-navy-800">{toPersianDigits(year)}</span>
+              </div>
+              {edition > 0 && (
+                <div className="bg-surface-50 rounded-lg px-3 py-2">
+                  <span className="text-[11px] text-surface-400 block">ویرایش</span>
+                  <span className="font-medium text-navy-800">{toPersianDigits(edition)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Shipping */}
+            <div className="space-y-2 mb-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className={cn("w-5 h-5 rounded-md flex items-center justify-center", shippingAvailable ? "bg-success-50 text-success-600" : "bg-surface-100 text-surface-400")}>
+                  {shippingAvailable ? "✓" : "✗"}
+                </div>
+                <span className="text-surface-600">ارسال پستی</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={cn("w-5 h-5 rounded-md flex items-center justify-center", pickupAvailable ? "bg-success-50 text-success-600" : "bg-surface-100 text-surface-400")}>
+                  {pickupAvailable ? "✓" : "✗"}
+                </div>
+                <span className="text-surface-600">تحویل حضوری</span>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="flex items-center gap-2 text-sm text-surface-600 mb-5 pb-5 border-b border-surface-100">
+              <svg className="w-4 h-4 text-surface-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {city}، {province}
+            </div>
+
+            {/* Seller */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-navy-100 flex items-center justify-center shrink-0">
+                <span className="text-sm font-bold text-navy-700">
+                  {seller.name ? seller.name[0] : "👤"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-navy-800 truncate">{seller.name}</p>
+                <div className="flex items-center gap-2 text-[11px] text-surface-500">
+                  {seller.rating > 0 && (
+                    <span className="flex items-center gap-0.5">
+                      <svg className="w-3 h-3 text-accent-500 fill-current" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      {seller.rating}
+                    </span>
+                  )}
+                  <span>{seller.totalSales} فروش</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Back link */}
+      <div className="mt-8">
+        <Link href="/marketplace" className="text-sm text-navy-600 hover:text-navy-800 font-medium inline-flex items-center gap-1.5">
+          <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          بازگشت به بازار کتاب
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function DefectTag({ label }: { label: string }) {
+  return (
+    <span className="px-2 py-0.5 text-[11px] font-medium bg-surface-100 text-surface-600 rounded-md">
+      {label}
+    </span>
+  );
+}

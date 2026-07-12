@@ -78,7 +78,7 @@ function sortListings(listings: Listing[], sort: string): Listing[] {
   }
 }
 
-export default function MarketplacePage({ initialListings = [] }: { initialListings?: Listing[] }) {
+export default function MarketplacePage({ initialListings = [], totalCount = 0 }: { initialListings?: Listing[]; totalCount?: number }) {
   const searchParams = useSearchParams();
 
   const [filters, setFilters] = useState<FilterState>({

@@ -7,8 +7,9 @@ import User from "./models/User";
 import Session from "./models/Session";
 import Listing from "./models/Listing";
 import { normalizePhone } from "./auth-store";
-import { generateOtp, verifyOtp } from "./otp-store";
+import { generateOtp, verifyOtp, canSendOtp, canVerifyOtp } from "./otp-store";
 import type { User as UserType } from "./types";
+import type { FieldOfStudy, Grade, BookConditionId } from "./constants";
 
 // Convert Mongoose document to plain User type
 function toUserType(doc: any): UserType {
@@ -106,7 +107,10 @@ export async function sendOtpAction(
     if (!/^09\d{9}$/.test(normalizedPhone)) {
       return { success: false, error: "شماره موبایل معتبر نیست." };
     }
-    generateOtp(normalizedPhone);
+    if (!canSendOtp(normalizedPhone)) {
+      return { success: false, error: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً ۵ دقیقه صبر کنید." };
+    }
+    await generateOtp(normalizedPhone);
     return { success: true };
   } catch (error) {
     console.error("Send OTP error:", error);
@@ -130,8 +134,13 @@ export async function loginAction(
       };
     }
 
+    // Check verify rate limit
+    if (!canVerifyOtp(normalizedPhone)) {
+      return { success: false, error: "تعداد تلاش‌ها بیش از حد مجاز است. لطفاً ۵ دقیقه صبر کنید." };
+    }
+
     // Verify OTP
-    if (!verifyOtp(normalizedPhone, otpCode)) {
+    if (!await verifyOtp(normalizedPhone, otpCode)) {
       return { success: false, error: "کد تایید نادرست یا منقضی شده است." };
     }
 
@@ -307,5 +316,107 @@ export async function getSellerListings(sellerId: string): Promise<any[]> {
   } catch (error) {
     console.error("Get seller listings error:", error);
     return [];
+  }
+}
+
+// Create a new listing
+export async function createListingAction(data: {
+  title: string;
+  author: string;
+  publisher: string;
+  field: string;
+  grade: string;
+  subject: string;
+  originalPrice: number;
+  price: number;
+  condition: string;
+  year: number;
+  edition?: number;
+  city: string;
+  province: string;
+  shippingAvailable: boolean;
+  pickupAvailable: boolean;
+  description?: string;
+  highlighting?: boolean;
+  handwrittenNotes?: boolean;
+  tornPages?: boolean;
+  missingPages?: boolean;
+  answersCompleted?: boolean;
+  coverDamaged?: boolean;
+  hasCd?: boolean;
+  hasSupplement?: boolean;
+}): Promise<{ success: boolean; listingId?: string; error?: string }> {
+  try {
+    const sellerId = await assertAuthenticated();
+
+    // Validate prices
+    if (!data.price || data.price < 1000) {
+      return { success: false, error: "قیمت فروش باید حداقل ۱,۰۰۰ تومان باشد." };
+    }
+    if (data.price > 50000000) {
+      return { success: false, error: "قیمت فروش نمی‌تواند بیش از ۵۰ میلیون تومان باشد." };
+    }
+    if (!data.originalPrice || data.originalPrice < 1000) {
+      return { success: false, error: "قیمت نو کتاب باید حداقل ۱,۰۰۰ تومان باشد." };
+    }
+    if (data.price > data.originalPrice) {
+      return { success: false, error: "قیمت فروش نمی‌تواند بیشتر از قیمت نو باشد." };
+    }
+
+    // Validate year
+    const currentYear = new Date().getFullYear();
+    const iranYear = currentYear - 621;
+    if (data.year < 1380 || data.year > iranYear + 1) {
+      return { success: false, error: "سال چاپ معتبر نیست." };
+    }
+
+    await connectDB();
+
+    const listing = await Listing.create({
+      book: {
+        title: data.title,
+        author: data.author,
+        publisher: {
+          name: data.publisher,
+          slug: data.publisher.replace(/\s+/g, "-").toLowerCase(),
+        },
+        field: data.field as FieldOfStudy,
+        grade: data.grade as Grade,
+        subject: data.subject,
+        originalPrice: data.originalPrice,
+      },
+      seller: sellerId,
+      price: data.price,
+      originalPrice: data.originalPrice,
+      condition: {
+        grade: data.condition as BookConditionId,
+        highlighting: data.highlighting || false,
+        handwrittenNotes: data.handwrittenNotes || false,
+        tornPages: data.tornPages || false,
+        missingPages: data.missingPages || false,
+        answersCompleted: data.answersCompleted || false,
+        coverDamaged: data.coverDamaged || false,
+        hasCd: data.hasCd || false,
+        hasSupplement: data.hasSupplement || false,
+      },
+      images: [],
+      description: data.description || "",
+      year: data.year,
+      edition: data.edition || 0,
+      city: data.city,
+      province: data.province,
+      shippingAvailable: data.shippingAvailable,
+      pickupAvailable: data.pickupAvailable,
+      isBundle: false,
+      priceIndicator: data.price > data.originalPrice * 0.5 ? "fair" : "great",
+      views: 0,
+      favorites: 0,
+      status: "active",
+    });
+
+    return { success: true, listingId: listing._id.toString() };
+  } catch (error) {
+    console.error("Create listing error:", error);
+    return { success: false, error: "خطایی در ایجاد آگهی رخ داد." };
   }
 }
