@@ -154,11 +154,11 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Breadcrumb */}
-      <nav className="mb-6 text-sm text-surface-500" aria-label="breadcrumb">
+      <nav className="mb-4 text-sm text-surface-500" aria-label="breadcrumb">
         <Link href="/" className="hover:text-navy-600 transition-colors">
           خانه
         </Link>
-        <span className="mx-2">/</span>
+        <span className="mx-2 text-surface-300">/</span>
         <span className="text-navy-700 font-medium">بازار کتاب</span>
       </nav>
 
@@ -167,7 +167,7 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
         <h1 className="text-2xl md:text-3xl font-bold text-navy-800">
           بازار کتاب کنکورباز
         </h1>
-        <p className="text-sm text-surface-500 mt-1">
+        <p className="text-sm text-surface-500 mt-1.5">
           {filteredListings.length} کتاب دست دوم موجود — ارزان‌تر بخر، راحت‌تر بفروش
         </p>
       </div>
@@ -199,17 +199,19 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
         {/* Listings grid */}
         <div className="flex-1 min-w-0">
           {paginatedListings.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">📚</div>
+            <div className="text-center py-20 bg-white rounded-3xl border border-surface-100">
+              <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-surface-50 flex items-center justify-center">
+                <span className="text-4xl">📚</span>
+              </div>
               <h3 className="text-lg font-bold text-navy-800 mb-2">
                 کتابی پیدا نشد
               </h3>
-              <p className="text-sm text-surface-500 mb-6">
+              <p className="text-sm text-surface-500 mb-6 max-w-sm mx-auto">
                 فیلترها را تغییر دهید یا جستجوی دیگری امتحان کنید
               </p>
               <button
                 onClick={handleReset}
-                className="px-6 py-2.5 bg-navy-700 text-white text-sm font-semibold rounded-xl hover:bg-navy-800 transition-colors cursor-pointer"
+                className="px-6 py-2.5 bg-navy-700 text-white text-sm font-semibold rounded-xl hover:bg-navy-800 transition-all cursor-pointer shadow-lg shadow-navy-700/20"
               >
                 پاک کردن فیلترها
               </button>
@@ -234,11 +236,11 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
+                <div className="flex items-center justify-center gap-2 mt-10">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    className="p-2.5 rounded-xl text-surface-500 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:shadow-sm"
                   >
                     <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -250,10 +252,10 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
                         key={page}
                         onClick={() => setCurrentPage(page)}
                         className={cn(
-                          "w-9 h-9 text-sm font-medium rounded-lg transition-colors cursor-pointer",
+                          "w-10 h-10 text-sm font-semibold rounded-xl transition-all cursor-pointer",
                           currentPage === page
-                            ? "bg-navy-700 text-white shadow-sm"
-                            : "text-surface-600 hover:bg-surface-100"
+                            ? "bg-navy-700 text-white shadow-lg shadow-navy-700/20"
+                            : "text-surface-600 hover:bg-surface-100 hover:shadow-sm"
                         )}
                       >
                         {toPersianDigits(page)}
@@ -265,7 +267,7 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
                       setCurrentPage((p) => Math.min(totalPages, p + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className="p-2 rounded-lg text-surface-500 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    className="p-2.5 rounded-xl text-surface-500 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:shadow-sm"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -287,10 +289,13 @@ function GridCard({ listing }: { listing: Listing }) {
 
   return (
     <Link href={`/listing/${listing._id}`}>
-      <Card variant="interactive" padding="none" className="overflow-hidden h-full">
-        <div className="relative h-40 md:h-44 bg-gradient-to-br from-navy-50 to-navy-100 flex items-center justify-center overflow-hidden">
-          <span className="text-4xl opacity-40">📚</span>
-          <div className="absolute top-2 right-2 flex flex-col gap-1">
+      <Card variant="interactive" padding="none" className="overflow-hidden h-full group">
+        {/* Image area */}
+        <div className="relative h-40 md:h-48 bg-gradient-to-br from-navy-50 via-surface-50 to-navy-100 flex items-center justify-center overflow-hidden">
+          <span className="text-5xl opacity-30 group-hover:scale-110 transition-transform duration-300">📚</span>
+          
+          {/* Top badges */}
+          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5">
             {isBundle && (
               <Badge variant="accent" size="sm">
                 📦 پکیج
@@ -302,43 +307,61 @@ function GridCard({ listing }: { listing: Listing }) {
               </Badge>
             )}
           </div>
+
+          {/* Discount badge */}
           {originalPrice > price && (
-            <div className="absolute top-2 left-2 bg-danger-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <div className="absolute top-2.5 left-2.5 bg-danger-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
               {toPersianDigits(
                 Math.round(((originalPrice - price) / originalPrice) * 100)
               )}
-              ٪
+             ٪ تخفیف
             </div>
           )}
+
+          {/* Bundle count */}
           {listing.isBundle && listing.bundleBooks && (
-            <div className="absolute bottom-2 left-2 bg-navy-800/80 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
+            <div className="absolute bottom-2.5 left-2.5 bg-navy-800/80 text-white text-[11px] font-medium px-2.5 py-1 rounded-lg backdrop-blur-sm">
               {listing.bundleBooks.length} کتاب
             </div>
           )}
         </div>
-        <div className="p-3 space-y-2">
-          <h3 className="font-bold text-sm text-navy-800 line-clamp-2 leading-relaxed">
+
+        {/* Content */}
+        <div className="p-3.5 space-y-2.5">
+          <h3 className="font-bold text-sm text-navy-800 line-clamp-2 leading-relaxed group-hover:text-navy-600 transition-colors">
             {book.title}
           </h3>
+          
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-surface-500">
+            <span className="text-[11px] text-surface-500 bg-surface-50 px-2 py-0.5 rounded-md">
               {book.publisher.name}
             </span>
-            <span className="text-xs text-surface-300">|</span>
-            <span className="text-xs text-surface-500">
+            <span className="text-[11px] text-surface-400">
               {fieldLabels[book.field] || book.field}
             </span>
           </div>
+
           <ConditionBadge condition={condition.grade} size="sm" />
+          
           <PriceTag price={price} originalPrice={originalPrice} size="sm" />
-          <div className="flex items-center justify-between pt-1 border-t border-surface-100">
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2.5 border-t border-surface-100">
             <div className="flex items-center gap-1.5">
               <div className="w-5 h-5 rounded-full bg-navy-100 flex items-center justify-center">
-                <span className="text-[10px]">👤</span>
+                <span className="text-[9px]">
+                  {seller.name ? seller.name[0] : "👤"}
+                </span>
               </div>
-              <span className="text-xs text-surface-500">{seller.name}</span>
+              <span className="text-[11px] text-surface-500">{seller.name}</span>
             </div>
-            <span className="text-xs text-surface-400">{city}</span>
+            <div className="flex items-center gap-1 text-[11px] text-surface-400">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {city}
+            </div>
           </div>
         </div>
       </Card>
@@ -352,11 +375,11 @@ function ListCard({ listing }: { listing: Listing }) {
 
   return (
     <Link href={`/listing/${listing._id}`}>
-      <Card variant="interactive" padding="none" className="overflow-hidden">
+      <Card variant="interactive" padding="none" className="overflow-hidden group">
         <div className="flex">
           {/* Image */}
-          <div className="relative w-28 md:w-36 shrink-0 h-28 md:h-32 bg-gradient-to-br from-navy-50 to-navy-100 flex items-center justify-center">
-            <span className="text-3xl opacity-40">📚</span>
+          <div className="relative w-32 md:w-40 shrink-0 h-32 md:h-36 bg-gradient-to-br from-navy-50 via-surface-50 to-navy-100 flex items-center justify-center overflow-hidden">
+            <span className="text-4xl opacity-30 group-hover:scale-110 transition-transform duration-300">📚</span>
             {isBundle && (
               <div className="absolute top-2 right-2">
                 <Badge variant="accent" size="sm">
@@ -364,13 +387,20 @@ function ListCard({ listing }: { listing: Listing }) {
                 </Badge>
               </div>
             )}
+            {originalPrice > price && (
+              <div className="absolute top-2 left-2 bg-danger-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                {toPersianDigits(
+                  Math.round(((originalPrice - price) / originalPrice) * 100)
+                )}٪
+              </div>
+            )}
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-3 md:p-4 flex flex-col justify-between">
+          <div className="flex-1 p-4 flex flex-col justify-between">
             <div>
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-bold text-sm md:text-base text-navy-800 line-clamp-1">
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="font-bold text-sm md:text-base text-navy-800 line-clamp-1 group-hover:text-navy-600 transition-colors">
                   {book.title}
                 </h3>
                 {listing.priceIndicator === "great" && (
@@ -379,22 +409,24 @@ function ListCard({ listing }: { listing: Listing }) {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-surface-500 mt-1">
+              <p className="text-xs text-surface-500 mt-1.5">
                 {book.publisher.name} · {fieldLabels[book.field] || book.field} ·{" "}
                 {book.author}
               </p>
             </div>
 
-            <div className="flex items-end justify-between mt-2">
+            <div className="flex items-end justify-between mt-3">
               <div className="flex items-center gap-3">
                 <ConditionBadge condition={condition.grade} size="sm" />
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 text-[11px] text-surface-500">
                   <div className="w-4 h-4 rounded-full bg-navy-100 flex items-center justify-center">
-                    <span className="text-[8px]">👤</span>
+                    <span className="text-[7px]">
+                      {seller.name ? seller.name[0] : "👤"}
+                    </span>
                   </div>
-                  <span className="text-[11px] text-surface-500">
-                    {seller.name} · {city}
-                  </span>
+                  <span>{seller.name}</span>
+                  <span className="text-surface-300">·</span>
+                  <span>{city}</span>
                 </div>
               </div>
               <PriceTag price={price} originalPrice={originalPrice} size="sm" />
