@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, formatPrice, toPersianDigits } from "@/lib/utils";
 import {
   FIELDS_OF_STUDY,
   GRADES,
@@ -196,9 +196,9 @@ export default function FilterSidebar({
             onChange={(e) =>
               onFilterChange("minPrice", e.target.value ? Number(e.target.value) : undefined)
             }
-            className="flex-1 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-800 placeholder:text-surface-400 focus:border-navy-500 focus:ring-1 focus:ring-navy-500/20 focus:outline-none"
+            className="min-w-0 flex-1 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-800 placeholder:text-surface-400 focus:border-navy-500 focus:ring-1 focus:ring-navy-500/20 focus:outline-none"
           />
-          <span className="text-surface-400">—</span>
+          <span className="text-surface-400 shrink-0">—</span>
           <input
             type="number"
             placeholder="تا"
@@ -206,15 +206,15 @@ export default function FilterSidebar({
             onChange={(e) =>
               onFilterChange("maxPrice", e.target.value ? Number(e.target.value) : undefined)
             }
-            className="flex-1 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-800 placeholder:text-surface-400 focus:border-navy-500 focus:ring-1 focus:ring-navy-500/20 focus:outline-none"
+            className="min-w-0 flex-1 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-800 placeholder:text-surface-400 focus:border-navy-500 focus:ring-1 focus:ring-navy-500/20 focus:outline-none"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
           {[
-            { label: "زیر ۲۰۰K", min: 0, max: 200000 },
-            { label: "۲۰۰K – ۵۰۰K", min: 200000, max: 500000 },
-            { label: "۵۰۰K – ۱M", min: 500000, max: 1000000 },
-            { label: "بالای ۱M", min: 1000000, max: undefined },
+            { label: `زیر ${toPersianDigits(200000)}`, min: 0, max: 200000 },
+            { label: `${toPersianDigits(200000)} – ${toPersianDigits(500000)}`, min: 200000, max: 500000 },
+            { label: `${toPersianDigits(500000)} – ${toPersianDigits(1000000)}`, min: 500000, max: 1000000 },
+            { label: `بالای ${toPersianDigits(1000000)}`, min: 1000000, max: undefined },
           ].map((preset) => (
             <button
               key={preset.label}
