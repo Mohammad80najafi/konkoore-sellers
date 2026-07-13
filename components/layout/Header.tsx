@@ -43,10 +43,18 @@ export default function Header({ currentUser }: HeaderProps) {
             <Link
               href="/"
               className="shrink-0 p-2 -mr-2 text-surface-600 hover:text-navy-700 hover:bg-surface-100 rounded-lg transition-colors"
-              aria-label="بازگشت به خانه"
-            >
-              <svg className="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              aria-label="بازگشت به خانه">
+              <svg
+                className="w-5 h-5 "
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </Link>
           )}
@@ -70,8 +78,7 @@ export default function Header({ currentUser }: HeaderProps) {
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                aria-hidden="true"
-              >
+                aria-hidden="true">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -83,13 +90,14 @@ export default function Header({ currentUser }: HeaderProps) {
           </div>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-1" aria-label="ناوبری اصلی">
+          <nav
+            className="hidden lg:flex items-center gap-1"
+            aria-label="ناوبری اصلی">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-3 py-2 text-sm font-medium text-surface-600 hover:text-navy-700 hover:bg-surface-50 rounded-lg transition-colors"
-              >
+                className="px-3 py-2 text-sm font-medium text-surface-600 hover:text-navy-700 hover:bg-surface-50 rounded-lg transition-colors">
                 {link.label}
               </Link>
             ))}
@@ -100,8 +108,18 @@ export default function Header({ currentUser }: HeaderProps) {
             {/* Sell button */}
             <Link href="/create-listing" className="hidden sm:block">
               <Button variant="accent" size="sm">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 فروش کتاب
               </Button>
@@ -113,10 +131,15 @@ export default function Header({ currentUser }: HeaderProps) {
                 <Link
                   href="/dashboard"
                   className="flex items-center gap-2 p-1.5 px-3 rounded-xl hover:bg-surface-100 transition-colors"
-                  aria-label="پروفایل من"
-                >
+                  aria-label="پروفایل من">
                   <div className="w-8 h-8 rounded-full bg-navy-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
-                    {currentUser.name ? currentUser.name.split(" ").map(w => w[0]).join("").slice(0, 2) : "U"}
+                    {currentUser.name
+                      ? currentUser.name
+                          .split(" ")
+                          .map((w) => w[0])
+                          .join("")
+                          .slice(0, 2)
+                      : "U"}
                   </div>
                   <span className="hidden md:inline text-sm font-semibold text-surface-800">
                     {currentUser.name}
@@ -127,29 +150,46 @@ export default function Header({ currentUser }: HeaderProps) {
                   <button
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                     className="p-2 text-surface-500 hover:text-surface-700 hover:bg-surface-100 rounded-lg transition-colors cursor-pointer"
-                    aria-label="منوی کاربری"
-                  >
+                    aria-label="منوی کاربری">
                     <svg
-                      className={cn("w-4 h-4 transition-transform", userDropdownOpen && "rotate-180")}
+                      className={cn(
+                        "w-4 h-4 transition-transform",
+                        userDropdownOpen && "rotate-180",
+                      )}
                       fill="none"
                       viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </button>
 
                   {userDropdownOpen && (
                     <>
-                      <div className="fixed inset-0 z-10" onClick={() => setUserDropdownOpen(false)} />
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setUserDropdownOpen(false)}
+                      />
                       <div className="absolute left-0 mt-2 w-48 bg-white rounded-xl border border-surface-200/60 shadow-elevated p-1.5 z-20 animate-scale-in">
                         <Link
                           href="/dashboard"
                           className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-700 hover:bg-surface-50 hover:text-navy-700 rounded-lg transition-colors font-medium"
-                          onClick={() => setUserDropdownOpen(false)}
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          onClick={() => setUserDropdownOpen(false)}>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
                           </svg>
                           پروفایل من
                         </Link>
@@ -158,10 +198,18 @@ export default function Header({ currentUser }: HeaderProps) {
                             setUserDropdownOpen(false);
                             handleLogout();
                           }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-danger-600 hover:bg-danger-50 rounded-lg transition-colors text-right font-semibold cursor-pointer"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-danger-600 hover:bg-danger-50 rounded-lg transition-colors text-right font-semibold cursor-pointer">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
                           </svg>
                           خروج از حساب
                         </button>
@@ -177,77 +225,9 @@ export default function Header({ currentUser }: HeaderProps) {
                 </Button>
               </Link>
             )}
-
-            {/* Mobile menu toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-surface-600 hover:text-navy-700 hover:bg-surface-100 rounded-lg transition-colors"
-              aria-label={mobileMenuOpen ? "بستن منو" : "باز کردن منو"}
-              aria-expanded={mobileMenuOpen}
-            >
-              {mobileMenuOpen ? (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile search bar */}
-        <div className="md:hidden pb-3">
-          <div className="relative">
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="جستجوی کتاب..."
-              className="w-full rounded-xl border border-surface-200 bg-white/80 px-4 py-2 pr-10 text-sm text-surface-800 placeholder:text-surface-400 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none"
-              aria-label="جستجوی کتاب"
-            />
-            <svg
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
           </div>
         </div>
       </div>
-
-      {/* Mobile menu dropdown */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-surface-200 animate-slide-down">
-          <nav className="max-w-7xl mx-auto px-4 py-3 space-y-1" aria-label="منو موبایل">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block px-3 py-2.5 text-sm font-medium text-surface-600 hover:text-navy-700 hover:bg-surface-50 rounded-lg transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Link
-              href="/create-listing"
-              className="block sm:hidden"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Button variant="accent" size="sm" fullWidth>
-                فروش کتاب
-              </Button>
-            </Link>
-          </nav>
-        </div>
-      )}
     </header>
   );
 }
