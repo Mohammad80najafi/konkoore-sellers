@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import ConversationList from "@/components/messages/ConversationList";
 import NewConversation from "@/components/messages/NewConversation";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "پیام‌ها",
   description: "لیست مکالمات شما",
