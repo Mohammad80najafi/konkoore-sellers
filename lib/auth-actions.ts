@@ -186,6 +186,15 @@ export async function loginAction(
       maxAge: 60 * 60 * 24 * 7, // 1 week
     });
 
+    // Non-httpOnly cookie for Socket.IO client auth
+    cookieStore.set("socket-token", sessionId, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
     return { success: true, user: toUserType(user) };
   } catch (error) {
     console.error("Login action error:", error);
@@ -206,6 +215,14 @@ export async function logoutAction(): Promise<{ success: boolean }> {
 
     cookieStore.set("session-token", "", {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+
+    cookieStore.set("socket-token", "", {
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",

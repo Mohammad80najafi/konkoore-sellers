@@ -37,7 +37,7 @@ export default function ChatView({
   useEffect(() => {
     // Get session token from cookie
     const cookies = document.cookie.split(";");
-    const sessionCookie = cookies.find((c) => c.trim().startsWith("session-token="));
+    const sessionCookie = cookies.find((c) => c.trim().startsWith("socket-token="));
     const token = sessionCookie?.split("=")[1];
 
     if (!token) return;
