@@ -58,6 +58,20 @@ export default function ChatView({
     socket.on("new-message", (msg: Message) => {
       if (msg.conversationId === conversationId) {
         setMessages((prev) => {
+          // Replace temp message with real server message (same sender + content)
+          const tempIdx = prev.findIndex(
+            (m) =>
+              m._id.startsWith("temp-") &&
+              m.sender._id === msg.sender._id &&
+              m.content === msg.content &&
+              m.image === msg.image
+          );
+          if (tempIdx !== -1) {
+            const updated = [...prev];
+            updated[tempIdx] = msg;
+            return updated;
+          }
+          // Skip if already exists
           if (prev.some((m) => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
@@ -106,13 +120,28 @@ export default function ChatView({
   const sendMessage = () => {
     if ((!input.trim() && !imagePreview) || !connected) return;
     const socket = getSocket();
-    socket.emit("send-message", {
-      conversationId,
-      content: input.trim(),
-      image: imagePreview || undefined,
-    });
+    const tempId = `temp-${Date.now()}`;
+    const content = input.trim();
+    const image = imagePreview || "";
+
+    // Optimistic update — show message immediately
+    setMessages((prev) => [
+      ...prev,
+      {
+        _id: tempId,
+        conversationId,
+        sender: { _id: currentUserId, name: "", avatar: "" },
+        content,
+        image,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+
+    socket.emit("send-message", { conversationId, content, image });
     setInput("");
     setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     inputRef.current?.focus();
   };
 
