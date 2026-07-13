@@ -593,3 +593,25 @@ export async function getUnreadCount(userId: string): Promise<number> {
     return 0;
   }
 }
+
+export async function searchUsers(query: string, currentUserId: string) {
+  try {
+    if (!query.trim()) return [];
+    await connectDB();
+    const users = await User.find({
+      _id: { $ne: currentUserId },
+      name: { $regex: query.trim(), $options: "i" },
+    })
+      .limit(10)
+      .select("name phone avatar");
+
+    return users.map((u) => ({
+      _id: u._id.toString(),
+      name: u.name,
+      phone: u.phone || "",
+      avatar: u.avatar || "",
+    }));
+  } catch {
+    return [];
+  }
+}
