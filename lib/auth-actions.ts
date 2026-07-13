@@ -289,30 +289,33 @@ export async function getSellerListings(sellerId: string): Promise<any[]> {
   try {
     await connectDB();
     const listings = await Listing.find({ seller: sellerId }).sort({ createdAt: -1 });
-    return listings.map((l) => ({
-      _id: l._id.toString(),
-      book: l.book,
-      seller: sellerId,
-      price: l.price,
-      originalPrice: l.originalPrice,
-      condition: l.condition,
-      images: l.images,
-      description: l.description,
-      year: l.year,
-      edition: l.edition,
-      city: l.city,
-      province: l.province,
-      shippingAvailable: l.shippingAvailable,
-      pickupAvailable: l.pickupAvailable,
-      isBundle: l.isBundle,
-      bundleBooks: l.bundleBooks,
-      priceIndicator: l.priceIndicator,
-      views: l.views,
-      favorites: l.favorites,
-      status: l.status,
-      createdAt: l.createdAt instanceof Date ? l.createdAt.toISOString() : String(l.createdAt),
-      updatedAt: l.updatedAt instanceof Date ? l.updatedAt.toISOString() : String(l.updatedAt),
-    }));
+    return listings.map((l) => {
+      const obj = l.toObject();
+      return {
+        _id: obj._id.toString(),
+        book: obj.book,
+        seller: sellerId,
+        price: obj.price,
+        originalPrice: obj.originalPrice,
+        condition: obj.condition,
+        images: obj.images,
+        description: obj.description,
+        year: obj.year,
+        edition: obj.edition,
+        city: obj.city,
+        province: obj.province,
+        shippingAvailable: obj.shippingAvailable,
+        pickupAvailable: obj.pickupAvailable,
+        isBundle: obj.isBundle,
+        bundleBooks: obj.bundleBooks,
+        priceIndicator: obj.priceIndicator,
+        views: obj.views,
+        favorites: obj.favorites,
+        status: obj.status,
+        createdAt: obj.createdAt instanceof Date ? obj.createdAt.toISOString() : String(obj.createdAt),
+        updatedAt: obj.updatedAt instanceof Date ? obj.updatedAt.toISOString() : String(obj.updatedAt),
+      };
+    });
   } catch (error) {
     console.error("Get seller listings error:", error);
     return [];

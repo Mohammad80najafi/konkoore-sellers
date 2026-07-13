@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toPersianDigits } from "@/lib/utils";
@@ -27,6 +27,64 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
 
   const validImages = images?.filter((img) => img.url && img.url.trim() !== "") || [];
   const [selectedImage, setSelectedImage] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const dragRef = useRef<{ startX: number; currentX: number } | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setDragOffset(0);
+    document.body.style.overflow = "";
+  };
+
+  const goNext = useCallback(() => {
+    setLightboxIndex((i) => (i + 1) % validImages.length);
+    setDragOffset(0);
+  }, [validImages.length]);
+
+  const goPrev = useCallback(() => {
+    setLightboxIndex((i) => (i - 1 + validImages.length) % validImages.length);
+    setDragOffset(0);
+  }, [validImages.length]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    dragRef.current = { startX: e.clientX, currentX: e.clientX };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    dragRef.current.currentX = e.clientX;
+    setDragOffset(e.clientX - dragRef.current.startX);
+  };
+
+  const onPointerUp = () => {
+    if (!dragRef.current) return;
+    const diff = dragRef.current.currentX - dragRef.current.startX;
+    if (Math.abs(diff) > 60) {
+      diff > 0 ? goPrev() : goNext();
+    }
+    dragRef.current = null;
+    setDragOffset(0);
+  };
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") goNext();
+      if (e.key === "ArrowRight") goPrev();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxOpen, goNext, goPrev]);
 
   const discount = originalPrice > price
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
@@ -52,7 +110,10 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
           {validImages.length > 0 ? (
             <div>
               {/* Main image */}
-              <div className="rounded-2xl overflow-hidden bg-surface-100 mb-3">
+              <div
+                className="rounded-2xl overflow-hidden bg-surface-100 mb-3 cursor-zoom-in"
+                onClick={() => openLightbox(selectedImage)}
+              >
                 <img
                   src={validImages[selectedImage]?.url}
                   alt={validImages[selectedImage]?.alt || book.title}
@@ -249,6 +310,83 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
           بازگشت به بازار کتاب
         </Link>
       </div>
+
+      {/* Fullscreen lightbox */}
+      {lightboxOpen && validImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center select-none touch-none"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          {/* Close button */}
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 left-4 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Counter */}
+          <div className="absolute top-4 right-4 z-10 bg-white/10 px-3 py-1 rounded-full text-white text-sm font-mono">
+            {lightboxIndex + 1} / {validImages.length}
+          </div>
+
+          {/* Prev arrow */}
+          {validImages.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
+              className="absolute right-4 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Next arrow */}
+          {validImages.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
+              className="absolute left-4 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Image */}
+          <img
+            src={validImages[lightboxIndex]?.url}
+            alt={validImages[lightboxIndex]?.alt || book.title}
+            className="max-w-[90vw] max-h-[85vh] object-contain pointer-events-none transition-transform"
+            style={{ transform: `translateX(${dragOffset}px)` }}
+            draggable={false}
+          />
+
+          {/* Thumbnail strip */}
+          {validImages.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/40 p-2 rounded-xl">
+              {validImages.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); setDragOffset(0); }}
+                  className={cn(
+                    "w-12 h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0",
+                    lightboxIndex === i ? "border-white" : "border-transparent opacity-50 hover:opacity-80"
+                  )}
+                >
+                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

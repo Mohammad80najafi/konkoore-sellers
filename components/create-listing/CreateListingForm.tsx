@@ -77,25 +77,28 @@ export default function CreateListingForm() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     const remaining = MAX_IMAGES - images.length;
     const filesToProcess = Array.from(files).slice(0, remaining);
 
-    filesToProcess.forEach((file) => {
-      if (file.size > 5 * 1024 * 1024) return; // max 5MB per image
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          setImages((prev) => [...prev, ev.target!.result as string]);
+    for (const file of filesToProcess) {
+      if (file.size > 5 * 1024 * 1024) continue;
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.url) {
+          setImages((prev) => [...prev, data.url]);
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch {
+        // silently skip failed uploads
+      }
+    }
 
-    // Reset input so same file can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
