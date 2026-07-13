@@ -9,6 +9,7 @@ interface Message {
   conversationId: string;
   sender: { _id: string; name: string; avatar: string };
   content: string;
+  image?: string;
   isRead: boolean;
   createdAt: string;
 }
@@ -31,11 +32,13 @@ export default function ChatView({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Get session token from cookie
     const cookies = document.cookie.split(";");
     const sessionCookie = cookies.find((c) => c.trim().startsWith("socket-token="));
     const token = sessionCookie?.split("=")[1];
@@ -74,11 +77,42 @@ export default function ChatView({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.url) {
+        setImagePreview(data.url);
+      }
+    } catch {
+      // ignore
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const sendMessage = () => {
-    if (!input.trim() || !connected) return;
+    if ((!input.trim() && !imagePreview) || !connected) return;
     const socket = getSocket();
-    socket.emit("send-message", { conversationId, content: input.trim() });
+    socket.emit("send-message", {
+      conversationId,
+      content: input.trim(),
+      image: imagePreview || undefined,
+    });
     setInput("");
+    setImagePreview(null);
     inputRef.current?.focus();
   };
 
@@ -127,23 +161,37 @@ export default function ChatView({
               className={`flex ${isMine ? "justify-start" : "justify-end"}`}
             >
               <div
-                className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${
+                className={`max-w-[75%] rounded-2xl overflow-hidden ${
                   isMine
                     ? "bg-navy-600 text-white rounded-br-md"
                     : "bg-surface-100 text-surface-800 rounded-bl-md"
                 }`}
               >
-                <p className="leading-relaxed">{msg.content}</p>
-                <p
-                  className={`text-[10px] mt-1 ${
-                    isMine ? "text-navy-200" : "text-surface-400"
-                  }`}
-                >
-                  {new Date(msg.createdAt).toLocaleTimeString("fa-IR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                {msg.image && (
+                  <img
+                    src={msg.image}
+                    alt="عکس پیام"
+                    className="w-full max-h-64 object-cover cursor-pointer"
+                    onClick={() => window.open(msg.image, "_blank")}
+                  />
+                )}
+                {msg.content && (
+                  <div className="px-3.5 py-2">
+                    <p className="leading-relaxed text-sm">{msg.content}</p>
+                  </div>
+                )}
+                <div className={`px-3.5 pb-2 ${!msg.content && msg.image ? "pt-1" : ""}`}>
+                  <p
+                    className={`text-[10px] ${
+                      isMine ? "text-navy-200" : "text-surface-400"
+                    }`}
+                  >
+                    {new Date(msg.createdAt).toLocaleTimeString("fa-IR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
           );
@@ -151,8 +199,47 @@ export default function ChatView({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Image preview */}
+      {imagePreview && (
+        <div className="px-4 pt-2 border-t border-surface-100">
+          <div className="relative inline-block">
+            <img src={imagePreview} alt="پیش‌نمایش" className="h-20 rounded-lg object-cover" />
+            <button
+              onClick={removeImage}
+              className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-danger-500 text-white rounded-full flex items-center justify-center text-xs cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="flex items-center gap-2 px-4 py-3 border-t border-surface-100 shrink-0">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="w-10 h-10 rounded-xl bg-surface-100 text-surface-500 flex items-center justify-center hover:bg-surface-200 transition-colors disabled:opacity-40 cursor-pointer shrink-0"
+          title="ارسال عکس"
+        >
+          {uploading ? (
+            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          )}
+        </button>
         <input
           ref={inputRef}
           type="text"
@@ -165,7 +252,7 @@ export default function ChatView({
         />
         <button
           onClick={sendMessage}
-          disabled={!input.trim() || !connected}
+          disabled={(!input.trim() && !imagePreview) || !connected}
           className="w-10 h-10 rounded-xl bg-navy-600 text-white flex items-center justify-center hover:bg-navy-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

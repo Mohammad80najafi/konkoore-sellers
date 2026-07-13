@@ -4,6 +4,7 @@ export interface IMessage extends Document {
   conversation: mongoose.Types.ObjectId;
   sender: mongoose.Types.ObjectId;
   content: string;
+  image?: string;
   isRead: boolean;
   createdAt: Date;
 }
@@ -23,8 +24,12 @@ const MessageSchema = new Schema<IMessage>(
     },
     content: {
       type: String,
-      required: true,
+      default: "",
       trim: true,
+    },
+    image: {
+      type: String,
+      default: "",
     },
     isRead: {
       type: Boolean,

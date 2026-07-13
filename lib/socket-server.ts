@@ -50,8 +50,9 @@ export function setupSocketServer(io: Server) {
 
     socket.on(
       "send-message",
-      async (data: { conversationId: string; content: string }) => {
-        if (!socket.userId || !data.content?.trim()) return;
+      async (data: { conversationId: string; content: string; image?: string }) => {
+        if (!socket.userId) return;
+        if (!data.content?.trim() && !data.image) return;
 
         try {
           await connectDB();
@@ -68,7 +69,8 @@ export function setupSocketServer(io: Server) {
           const message = await Message.create({
             conversation: data.conversationId,
             sender: socket.userId,
-            content: data.content.trim(),
+            content: data.content?.trim() || "",
+            image: data.image || "",
           });
 
           await Conversation.findByIdAndUpdate(data.conversationId, {
@@ -90,6 +92,7 @@ export function setupSocketServer(io: Server) {
               avatar: (populated!.sender as any).avatar || "",
             },
             content: populated!.content,
+            image: (populated as any).image || "",
             isRead: false,
             createdAt: populated!.createdAt.toISOString(),
           };

@@ -532,6 +532,7 @@ export async function getMessages(conversationId: string, userId: string) {
           avatar: (obj.sender as any).avatar || "",
         },
         content: obj.content,
+        image: obj.image || "",
         isRead: obj.isRead,
         createdAt: obj.createdAt instanceof Date ? obj.createdAt.toISOString() : String(obj.createdAt),
       };
