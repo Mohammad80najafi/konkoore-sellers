@@ -15,7 +15,9 @@ const arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"
 export function normalizeDigits(str: string): string {
   let result = str;
   for (let i = 0; i < 10; i++) {
-    result = result.replaceAll(persianDigits[i], String(i)).replaceAll(arabicDigits[i], String(i));
+    result = result
+      .replaceAll(persianDigits[i], String(i))
+      .replaceAll(arabicDigits[i], String(i));
   }
   return result;
 }
@@ -39,13 +41,20 @@ export function formatPriceShort(price: number): string {
 }
 
 // ===== Discount Calculation =====
-export function calculateDiscount(originalPrice: number, currentPrice: number): number {
+export function calculateDiscount(
+  originalPrice: number,
+  currentPrice: number,
+): number {
   if (originalPrice <= 0) return 0;
   return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
 }
 
 // ===== Jalali Date Conversion (simplified) =====
-function gregorianToJalali(gy: number, gm: number, gd: number): [number, number, number] {
+function gregorianToJalali(
+  gy: number,
+  gm: number,
+  gd: number,
+): [number, number, number] {
   const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
   let jy: number;
   const gy2 = gm > 2 ? gy + 1 : gy;
@@ -91,7 +100,7 @@ export function toJalali(dateStr: string): string {
   const [jy, jm, jd] = gregorianToJalali(
     date.getFullYear(),
     date.getMonth() + 1,
-    date.getDate()
+    date.getDate(),
   );
   return `${toPersianDigits(jd)} ${JALALI_MONTHS[jm - 1]} ${toPersianDigits(jy)}`;
 }
@@ -108,21 +117,30 @@ export function toJalaliRelative(dateStr: string): string {
   if (diffMinutes < 60) return `${toPersianDigits(diffMinutes)} دقیقه پیش`;
   if (diffHours < 24) return `${toPersianDigits(diffHours)} ساعت پیش`;
   if (diffDays < 7) return `${toPersianDigits(diffDays)} روز پیش`;
-  if (diffDays < 30) return `${toPersianDigits(Math.floor(diffDays / 7))} هفته پیش`;
+  if (diffDays < 30)
+    return `${toPersianDigits(Math.floor(diffDays / 7))} هفته پیش`;
   return toJalali(dateStr);
 }
 
 // ===== Condition Helpers =====
 export function getConditionLabel(conditionId: BookConditionId): string {
-  return BOOK_CONDITIONS.find((c) => c.id === conditionId)?.label ?? conditionId;
+  return (
+    BOOK_CONDITIONS.find((c) => c.id === conditionId)?.label ?? conditionId
+  );
 }
 
 export function getConditionColor(conditionId: BookConditionId): string {
-  return BOOK_CONDITIONS.find((c) => c.id === conditionId)?.color ?? "text-surface-600";
+  return (
+    BOOK_CONDITIONS.find((c) => c.id === conditionId)?.color ??
+    "text-surface-600"
+  );
 }
 
 export function getConditionBgColor(conditionId: BookConditionId): string {
-  return BOOK_CONDITIONS.find((c) => c.id === conditionId)?.bgColor ?? "bg-surface-50";
+  return (
+    BOOK_CONDITIONS.find((c) => c.id === conditionId)?.bgColor ??
+    "bg-surface-50"
+  );
 }
 
 export function getConditionScore(conditionId: BookConditionId): number {
@@ -133,7 +151,7 @@ export function getConditionScore(conditionId: BookConditionId): number {
 export function getPriceIndicator(
   price: number,
   originalPrice: number,
-  averageListingPrice?: number
+  averageListingPrice?: number,
 ): PriceIndicator {
   const ratio = price / originalPrice;
   const avgRatio = averageListingPrice ? price / averageListingPrice : ratio;
@@ -163,6 +181,8 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 // ===== CN (class name helper) =====
-export function cn(...classes: (string | boolean | undefined | null)[]): string {
+export function cn(
+  ...classes: (string | boolean | undefined | null)[]
+): string {
   return classes.filter(Boolean).join(" ");
 }

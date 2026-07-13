@@ -48,49 +48,63 @@ export function setupSocketServer(io: Server) {
       socket.leave(`conversation:${conversationId}`);
     });
 
-    socket.on("send-message", async (data: { conversationId: string; content: string }) => {
-      if (!socket.userId || !data.content?.trim()) return;
+    socket.on(
+      "send-message",
+      async (data: { conversationId: string; content: string }) => {
+        if (!socket.userId || !data.content?.trim()) return;
 
-      try {
-        await connectDB();
+        try {
+          await connectDB();
 
-        const conversation = await Conversation.findById(data.conversationId);
-        if (!conversation) return;
-        if (!conversation.participants.some((p) => p.toString() === socket.userId)) return;
+          const conversation = await Conversation.findById(data.conversationId);
+          if (!conversation) return;
+          if (
+            !conversation.participants.some(
+              (p) => p.toString() === socket.userId,
+            )
+          )
+            return;
 
-        const message = await Message.create({
-          conversation: data.conversationId,
-          sender: socket.userId,
-          content: data.content.trim(),
-        });
+          const message = await Message.create({
+            conversation: data.conversationId,
+            sender: socket.userId,
+            content: data.content.trim(),
+          });
 
-        await Conversation.findByIdAndUpdate(data.conversationId, {
-          lastMessage: message._id,
-          lastMessageAt: new Date(),
-        });
+          await Conversation.findByIdAndUpdate(data.conversationId, {
+            lastMessage: message._id,
+            lastMessageAt: new Date(),
+          });
 
-        const populated = await Message.findById(message._id).populate("sender", "name avatar");
+          const populated = await Message.findById(message._id).populate(
+            "sender",
+            "name avatar",
+          );
 
-        const msgObj = {
-          _id: populated!._id.toString(),
-          conversationId: data.conversationId,
-          sender: {
-            _id: populated!.sender._id.toString(),
-            name: (populated!.sender as any).name,
-            avatar: (populated!.sender as any).avatar || "",
-          },
-          content: populated!.content,
-          isRead: false,
-          createdAt: populated!.createdAt.toISOString(),
-        };
+          const msgObj = {
+            _id: populated!._id.toString(),
+            conversationId: data.conversationId,
+            sender: {
+              _id: populated!.sender._id.toString(),
+              name: (populated!.sender as any).name,
+              avatar: (populated!.sender as any).avatar || "",
+            },
+            content: populated!.content,
+            isRead: false,
+            createdAt: populated!.createdAt.toISOString(),
+          };
 
-        for (const participantId of conversation.participants) {
-          io.to(`user:${participantId.toString()}`).emit("new-message", msgObj);
+          for (const participantId of conversation.participants) {
+            io.to(`user:${participantId.toString()}`).emit(
+              "new-message",
+              msgObj,
+            );
+          }
+        } catch (err) {
+          console.error("[Socket] Send message error:", err);
         }
-      } catch (err) {
-        console.error("[Socket] Send message error:", err);
-      }
-    });
+      },
+    );
 
     socket.on("typing", (data: { conversationId: string }) => {
       if (!socket.userId) return;
@@ -111,7 +125,7 @@ export function setupSocketServer(io: Server) {
             sender: { $ne: socket.userId },
             isRead: false,
           },
-          { isRead: true }
+          { isRead: true },
         );
       } catch (err) {
         console.error("[Socket] Mark read error:", err);
