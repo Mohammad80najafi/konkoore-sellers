@@ -24,7 +24,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
   const conversation = conversations.find((c) => c._id === id);
 
   return (
-    <div className="max-w-3xl mx-auto h-[calc(100vh-4rem)] flex flex-col">
+    <div className="max-w-3xl mx-auto h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4rem)] flex flex-col">
       <ChatView
         conversationId={id}
         currentUserId={user._id}
