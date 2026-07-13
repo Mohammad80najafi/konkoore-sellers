@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { connectSocket, getSocket } from "@/lib/socket-client";
 import type { User } from "@/lib/types";
 
 const navItems = [
@@ -61,6 +63,30 @@ interface MobileNavProps {
 
 export default function MobileNav({ currentUser, unreadCount = 0 }: MobileNavProps) {
   const pathname = usePathname();
+  const [count, setCount] = useState(unreadCount);
+
+  useEffect(() => {
+    setCount(unreadCount);
+  }, [unreadCount]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const cookies = document.cookie.split(";");
+    const sessionCookie = cookies.find((c) => c.trim().startsWith("socket-token="));
+    const token = sessionCookie?.split("=")[1];
+    if (!token) return;
+
+    const socket = connectSocket(token);
+
+    const handleNewMessage = () => {
+      setCount((prev) => prev + 1);
+    };
+
+    socket.on("new-message", handleNewMessage);
+    return () => {
+      socket.off("new-message", handleNewMessage);
+    };
+  }, [currentUser]);
 
   const items = navItems.map((item) => {
     if (item.href === "/dashboard" && !currentUser) {
@@ -105,9 +131,9 @@ export default function MobileNav({ currentUser, unreadCount = 0 }: MobileNavPro
               aria-current={isActive ? "page" : undefined}
             >
               {item.icon}
-              {item.href === "/messages" && unreadCount > 0 && (
+              {item.href === "/messages" && count > 0 && (
                 <span className="absolute -top-0.5 right-1 min-w-[16px] h-4 bg-danger-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                  {count > 99 ? "99+" : count}
                 </span>
               )}
               <span className="text-[10px] font-medium">{item.label}</span>

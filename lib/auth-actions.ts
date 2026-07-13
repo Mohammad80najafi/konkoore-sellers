@@ -583,14 +583,46 @@ export async function getUnreadCount(userId: string): Promise<number> {
     await connectDB();
     const conversations = await Conversation.find({ participants: userId });
     const convIds = conversations.map((c) => c._id);
-    const count = await Message.countDocuments({
-      conversation: { $in: convIds },
-      sender: { $ne: userId },
-      isRead: false,
-    });
-    return count;
+    // Count conversations that have at least one unread message from someone else
+    const result = await Message.aggregate([
+      {
+        $match: {
+          conversation: { $in: convIds },
+          sender: { $ne: new (await import("mongoose")).default.Types.ObjectId(userId) },
+          isRead: false,
+        },
+      },
+      { $group: { _id: "$conversation" } },
+      { $count: "total" },
+    ]);
+    return result[0]?.total || 0;
   } catch {
     return 0;
+  }
+}
+
+export async function getUnreadCountsByConversation(userId: string): Promise<Record<string, number>> {
+  try {
+    await connectDB();
+    const conversations = await Conversation.find({ participants: userId });
+    const convIds = conversations.map((c) => c._id);
+    const results = await Message.aggregate([
+      {
+        $match: {
+          conversation: { $in: convIds },
+          sender: { $ne: new (await import("mongoose")).default.Types.ObjectId(userId) },
+          isRead: false,
+        },
+      },
+      { $group: { _id: "$conversation", count: { $sum: 1 } } },
+    ]);
+    const map: Record<string, number> = {};
+    for (const r of results) {
+      map[r._id.toString()] = r.count;
+    }
+    return map;
+  } catch {
+    return {};
   }
 }
 
