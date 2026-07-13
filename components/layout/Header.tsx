@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,8 @@ export default function Header({ currentUser }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const pathname = usePathname();
+  const isMessages = pathname.startsWith("/messages");
 
   const handleLogout = async () => {
     const res = await logoutAction();
@@ -36,6 +39,17 @@ export default function Header({ currentUser }: HeaderProps) {
         {/* Main header row */}
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
+          {isMessages && (
+            <Link
+              href="/"
+              className="shrink-0 p-2 -mr-2 text-surface-600 hover:text-navy-700 hover:bg-surface-100 rounded-lg transition-colors"
+              aria-label="بازگشت به خانه"
+            >
+              <svg className="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )}
           <Link href="/" className="shrink-0" aria-label="صفحه اصلی کنکورباز">
             <Logo size="md" />
           </Link>
