@@ -56,9 +56,10 @@ const navItems = [
 
 interface MobileNavProps {
   currentUser?: User | null;
+  unreadCount?: number;
 }
 
-export default function MobileNav({ currentUser }: MobileNavProps) {
+export default function MobileNav({ currentUser, unreadCount = 0 }: MobileNavProps) {
   const pathname = usePathname();
 
   const items = navItems.map((item) => {
@@ -95,7 +96,7 @@ export default function MobileNav({ currentUser }: MobileNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-lg transition-colors min-w-[56px]",
+                "relative flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-lg transition-colors min-w-[56px]",
                 isActive
                   ? "text-navy-700"
                   : "text-surface-400 hover:text-surface-600"
@@ -104,6 +105,11 @@ export default function MobileNav({ currentUser }: MobileNavProps) {
               aria-current={isActive ? "page" : undefined}
             >
               {item.icon}
+              {item.href === "/messages" && unreadCount > 0 && (
+                <span className="absolute -top-0.5 right-1 min-w-[16px] h-4 bg-danger-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
               <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
           );

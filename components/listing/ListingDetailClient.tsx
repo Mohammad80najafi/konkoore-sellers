@@ -2,9 +2,11 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { toPersianDigits } from "@/lib/utils";
 import { BOOK_CONDITIONS } from "@/lib/constants";
+import { createConversation } from "@/lib/auth-actions";
 import type { Listing } from "@/lib/types";
 
 const fieldLabels: Record<string, string> = {
@@ -23,6 +25,7 @@ const gradeLabels: Record<string, string> = {
 };
 
 export default function ListingDetailClient({ listing }: { listing: Listing }) {
+  const router = useRouter();
   const { book, price, originalPrice, condition, seller, city, province, isBundle, bundleBooks, description, year, edition, shippingAvailable, pickupAvailable, images } = listing;
 
   const validImages = images?.filter((img) => img.url && img.url.trim() !== "") || [];
@@ -31,6 +34,7 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const dragRef = useRef<{ startX: number; currentX: number } | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
+  const [messageLoading, setMessageLoading] = useState(false);
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -276,7 +280,7 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
             </div>
 
             {/* Seller */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-navy-100 flex items-center justify-center shrink-0">
                 <span className="text-sm font-bold text-navy-700">
                   {seller.name ? seller.name[0] : "👤"}
@@ -297,6 +301,22 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
                 </div>
               </div>
             </div>
+
+            {/* Message seller button */}
+            <button
+              onClick={async () => {
+                setMessageLoading(true);
+                const res = await createConversation(seller._id, listing._id);
+                if (res.success && res.conversationId) {
+                  router.push(`/messages/${res.conversationId}`);
+                }
+                setMessageLoading(false);
+              }}
+              disabled={messageLoading}
+              className="w-full py-2.5 bg-navy-600 text-white text-sm font-semibold rounded-xl hover:bg-navy-700 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {messageLoading ? "..." : "پیام به فروشنده"}
+            </button>
           </div>
         </div>
       </div>

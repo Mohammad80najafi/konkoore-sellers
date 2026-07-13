@@ -428,3 +428,150 @@ export async function createListingAction(data: {
     return { success: false, error: "خطایی در ایجاد آگهی رخ داد." };
   }
 }
+
+// ===== Messaging =====
+
+import Conversation from "./models/Conversation";
+import Message from "./models/Message";
+
+export async function getConversations(userId: string) {
+  try {
+    await connectDB();
+    const convos = await Conversation.find({ participants: userId })
+      .sort({ lastMessageAt: -1 })
+      .populate("participants", "name avatar")
+      .populate("listing", "book.title book.author images")
+      .populate({
+        path: "lastMessage",
+        populate: { path: "sender", select: "name" },
+      });
+
+    return convos.map((c) => {
+      const obj = c.toObject() as any;
+      const other = obj.participants.find(
+        (p: any) => p._id.toString() !== userId
+      );
+      return {
+        _id: obj._id.toString(),
+        participants: obj.participants.map((p: any) => ({
+          _id: p._id.toString(),
+          name: p.name,
+          avatar: p.avatar || "",
+        })),
+        listing: obj.listing
+          ? {
+              _id: obj.listing._id.toString(),
+              book: obj.listing.book,
+            }
+          : undefined,
+        lastMessage: obj.lastMessage
+          ? {
+              _id: obj.lastMessage._id.toString(),
+              content: obj.lastMessage.content,
+              sender: {
+                _id: obj.lastMessage.sender._id.toString(),
+                name: obj.lastMessage.sender.name,
+              },
+              createdAt:
+                obj.lastMessage.createdAt instanceof Date
+                  ? obj.lastMessage.createdAt.toISOString()
+                  : String(obj.lastMessage.createdAt),
+            }
+          : undefined,
+        otherUser: other
+          ? { _id: other._id.toString(), name: other.name, avatar: other.avatar || "" }
+          : undefined,
+        updatedAt: obj.updatedAt instanceof Date ? obj.updatedAt.toISOString() : String(obj.updatedAt),
+      };
+    });
+  } catch (error) {
+    console.error("Get conversations error:", error);
+    return [];
+  }
+}
+
+export async function getMessages(conversationId: string, userId: string) {
+  try {
+    await connectDB();
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation || !conversation.participants.some((p) => p.toString() === userId)) {
+      return [];
+    }
+
+    const messages = await Message.find({ conversation: conversationId })
+      .sort({ createdAt: 1 })
+      .populate("sender", "name avatar")
+      .limit(100);
+
+    return messages.map((m) => {
+      const obj = m.toObject() as any;
+      return {
+        _id: obj._id.toString(),
+        conversationId: conversationId,
+        sender: {
+          _id: obj.sender._id.toString(),
+          name: (obj.sender as any).name,
+          avatar: (obj.sender as any).avatar || "",
+        },
+        content: obj.content,
+        isRead: obj.isRead,
+        createdAt: obj.createdAt instanceof Date ? obj.createdAt.toISOString() : String(obj.createdAt),
+      };
+    });
+  } catch (error) {
+    console.error("Get messages error:", error);
+    return [];
+  }
+}
+
+export async function createConversation(
+  participantId: string,
+  listingId?: string
+): Promise<{ success: boolean; conversationId?: string; error?: string }> {
+  try {
+    const userId = await assertAuthenticated();
+
+    await connectDB();
+
+    // Check for existing conversation between these two users
+    const query: any = {
+      participants: { $all: [userId, participantId], $size: 2 },
+    };
+    if (listingId) {
+      query.listing = listingId;
+    }
+
+    const existing = await Conversation.findOne(query);
+    if (existing) {
+      return { success: true, conversationId: existing._id.toString() };
+    }
+
+    const conversation = await Conversation.create({
+      participants: [userId, participantId],
+      listing: listingId || undefined,
+      lastMessageAt: new Date(),
+    });
+
+    return { success: true, conversationId: conversation._id.toString() };
+  } catch (error) {
+    console.error("Create conversation error:", error);
+    return { success: false, error: "خطایی در ایجاد مکالمه رخ داد." };
+  }
+}
+
+export async function getUnreadCount(userId: string): Promise<number> {
+  try {
+    await connectDB();
+    const conversations = await Conversation.find({ participants: userId });
+    const convIds = conversations.map((c) => c._id);
+    const count = await Message.countDocuments({
+      conversation: { $in: convIds },
+      sender: { $ne: userId },
+      isRead: false,
+    });
+    return count;
+  } catch {
+    return 0;
+  }
+}
