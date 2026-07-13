@@ -3,13 +3,10 @@
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import Card from "@/components/ui/Card";
-import PriceTag from "@/components/ui/PriceTag";
 import ConditionBadge from "@/components/ui/ConditionBadge";
-import Badge from "@/components/ui/Badge";
 import FilterSidebar from "./FilterSidebar";
 import SortBar from "./SortBar";
-import { toPersianDigits, cn } from "@/lib/utils";
+import { toPersianDigits, cn, formatPrice } from "@/lib/utils";
 import type { FilterState, Listing } from "@/lib/types";
 
 const fieldLabels: Record<string, string> = {
@@ -284,78 +281,103 @@ export default function MarketplacePage({ initialListings = [], totalCount = 0 }
 }
 
 function GridCard({ listing }: { listing: Listing }) {
-  const { book, price, originalPrice, condition, seller, city, isBundle } =
+  const { book, price, originalPrice, condition, seller, city, isBundle, images } =
     listing;
+
+  const coverImage = images?.find((img) => img.url && img.url.trim() !== "")?.url;
 
   return (
     <Link href={`/listing/${listing._id}`}>
-      <Card variant="interactive" padding="none" className="overflow-hidden h-full group">
+      <div className="bg-white rounded-2xl border border-surface-100 overflow-hidden h-full group hover:shadow-lg hover:shadow-navy-100/40 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
         {/* Image area */}
-        <div className="relative h-40 md:h-48 bg-gradient-to-br from-navy-50 via-surface-50 to-navy-100 flex items-center justify-center overflow-hidden">
-          <span className="text-5xl opacity-30 group-hover:scale-110 transition-transform duration-300">📚</span>
-          
-          {/* Top badges */}
-          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5">
-            {isBundle && (
-              <Badge variant="accent" size="sm">
-                📦 پکیج
-              </Badge>
-            )}
-            {listing.priceIndicator === "great" && (
-              <Badge variant="success" size="sm">
-                🔥 قیمت عالی
-              </Badge>
-            )}
-          </div>
+        <div className="relative aspect-[4/3] bg-surface-50 overflow-hidden">
+          {coverImage ? (
+            <img
+              src={coverImage}
+              alt={book.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-navy-50 via-surface-50 to-navy-100">
+              <span className="text-5xl opacity-20 group-hover:scale-110 transition-transform duration-500">📚</span>
+            </div>
+          )}
+
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
           {/* Discount badge */}
           {originalPrice > price && (
-            <div className="absolute top-2.5 left-2.5 bg-danger-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
-              {toPersianDigits(
-                Math.round(((originalPrice - price) / originalPrice) * 100)
-              )}
-             ٪ تخفیف
+            <div className="absolute top-2.5 left-2.5 bg-danger-500 text-white text-[11px] font-bold px-2 py-1 rounded-lg shadow-sm">
+              {toPersianDigits(Math.round(((originalPrice - price) / originalPrice) * 100))}٪
             </div>
           )}
 
-          {/* Bundle count */}
-          {listing.isBundle && listing.bundleBooks && (
-            <div className="absolute bottom-2.5 left-2.5 bg-navy-800/80 text-white text-[11px] font-medium px-2.5 py-1 rounded-lg backdrop-blur-sm">
-              {listing.bundleBooks.length} کتاب
-            </div>
-          )}
+          {/* Top-right badges */}
+          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5">
+            {isBundle && (
+              <div className="bg-accent-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">
+                📦 پکیج
+              </div>
+            )}
+            {listing.priceIndicator === "great" && (
+              <div className="bg-success-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">
+                قیمت عالی
+              </div>
+            )}
+          </div>
+
+          {/* Views */}
+          <div className="absolute bottom-2.5 left-2.5 bg-black/50 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            {toPersianDigits(listing.views)}
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-3.5 space-y-2.5">
-          <h3 className="font-bold text-sm text-navy-800 line-clamp-2 leading-relaxed group-hover:text-navy-600 transition-colors">
+        <div className="p-3.5">
+          <h3 className="font-bold text-[13px] text-navy-800 line-clamp-1 group-hover:text-navy-600 transition-colors leading-relaxed">
             {book.title}
           </h3>
-          
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] text-surface-500 bg-surface-50 px-2 py-0.5 rounded-md">
-              {book.publisher.name}
-            </span>
-            <span className="text-[11px] text-surface-400">
+
+          <p className="text-[11px] text-surface-400 mt-1 truncate">
+            {book.author} · {book.publisher.name}
+          </p>
+
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="text-[10px] text-surface-500 bg-surface-50 px-1.5 py-0.5 rounded">
               {fieldLabels[book.field] || book.field}
             </span>
+            <ConditionBadge condition={condition.grade} size="sm" />
           </div>
 
-          <ConditionBadge condition={condition.grade} size="sm" />
-          
-          <PriceTag price={price} originalPrice={originalPrice} size="sm" />
+          {/* Price */}
+          <div className="flex items-baseline gap-2 mt-3 pt-3 border-t border-surface-100">
+            <span className="text-base font-black text-navy-800">
+              {formatPrice(price)}
+            </span>
+            {originalPrice > price && (
+              <span className="text-[11px] text-surface-400 line-through">
+                {formatPrice(originalPrice)}
+              </span>
+            )}
+            <span className="text-[10px] text-surface-400 mr-auto">تومان</span>
+          </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-2.5 border-t border-surface-100">
+          <div className="flex items-center justify-between mt-2.5">
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-navy-100 flex items-center justify-center">
-                <span className="text-[9px]">
+              <div className="w-4 h-4 rounded-full bg-navy-100 flex items-center justify-center">
+                <span className="text-[8px] font-bold text-navy-600">
                   {seller.name ? seller.name[0] : "👤"}
                 </span>
               </div>
-              <span className="text-[11px] text-surface-500">{seller.name}</span>
+              <span className="text-[10px] text-surface-500">{seller.name}</span>
             </div>
-            <div className="flex items-center gap-1 text-[11px] text-surface-400">
+            <div className="flex items-center gap-0.5 text-[10px] text-surface-400">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -364,76 +386,99 @@ function GridCard({ listing }: { listing: Listing }) {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
     </Link>
   );
 }
 
 function ListCard({ listing }: { listing: Listing }) {
-  const { book, price, originalPrice, condition, seller, city, isBundle } =
+  const { book, price, originalPrice, condition, seller, city, isBundle, images } =
     listing;
+
+  const coverImage = images?.find((img) => img.url && img.url.trim() !== "")?.url;
 
   return (
     <Link href={`/listing/${listing._id}`}>
-      <Card variant="interactive" padding="none" className="overflow-hidden group">
+      <div className="bg-white rounded-2xl border border-surface-100 overflow-hidden group hover:shadow-lg hover:shadow-navy-100/40 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
         <div className="flex">
           {/* Image */}
-          <div className="relative w-32 md:w-40 shrink-0 h-32 md:h-36 bg-gradient-to-br from-navy-50 via-surface-50 to-navy-100 flex items-center justify-center overflow-hidden">
-            <span className="text-4xl opacity-30 group-hover:scale-110 transition-transform duration-300">📚</span>
-            {isBundle && (
-              <div className="absolute top-2 right-2">
-                <Badge variant="accent" size="sm">
-                  📦 پکیج
-                </Badge>
+          <div className="relative w-36 md:w-44 shrink-0 aspect-[4/3] bg-surface-50 overflow-hidden">
+            {coverImage ? (
+              <img
+                src={coverImage}
+                alt={book.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-navy-50 via-surface-50 to-navy-100">
+                <span className="text-4xl opacity-20 group-hover:scale-110 transition-transform duration-500">📚</span>
               </div>
             )}
+
+            {/* Discount badge */}
             {originalPrice > price && (
-              <div className="absolute top-2 left-2 bg-danger-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                {toPersianDigits(
-                  Math.round(((originalPrice - price) / originalPrice) * 100)
-                )}٪
+              <div className="absolute top-2 left-2 bg-danger-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">
+                {toPersianDigits(Math.round(((originalPrice - price) / originalPrice) * 100))}٪
+              </div>
+            )}
+
+            {isBundle && (
+              <div className="absolute top-2 right-2 bg-accent-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm">
+                📦 پکیج
               </div>
             )}
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-4 flex flex-col justify-between">
+          <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
             <div>
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="font-bold text-sm md:text-base text-navy-800 line-clamp-1 group-hover:text-navy-600 transition-colors">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-bold text-sm md:text-[15px] text-navy-800 line-clamp-1 group-hover:text-navy-600 transition-colors">
                   {book.title}
                 </h3>
                 {listing.priceIndicator === "great" && (
-                  <Badge variant="success" size="sm">
-                    🔥 قیمت عالی
-                  </Badge>
+                  <div className="shrink-0 bg-success-50 text-success-600 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                    قیمت عالی
+                  </div>
                 )}
               </div>
-              <p className="text-xs text-surface-500 mt-1.5">
-                {book.publisher.name} · {fieldLabels[book.field] || book.field} ·{" "}
-                {book.author}
+
+              <p className="text-xs text-surface-400 mt-1 truncate">
+                {book.author} · {book.publisher.name}
               </p>
+
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                <span className="text-[10px] text-surface-500 bg-surface-50 px-1.5 py-0.5 rounded">
+                  {fieldLabels[book.field] || book.field}
+                </span>
+                <ConditionBadge condition={condition.grade} size="sm" />
+              </div>
             </div>
 
-            <div className="flex items-end justify-between mt-3">
-              <div className="flex items-center gap-3">
-                <ConditionBadge condition={condition.grade} size="sm" />
-                <div className="flex items-center gap-1.5 text-[11px] text-surface-500">
+            <div className="flex items-end justify-between mt-3 pt-3 border-t border-surface-100">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <div className="w-4 h-4 rounded-full bg-navy-100 flex items-center justify-center">
-                    <span className="text-[7px]">
+                    <span className="text-[7px] font-bold text-navy-600">
                       {seller.name ? seller.name[0] : "👤"}
                     </span>
                   </div>
-                  <span>{seller.name}</span>
-                  <span className="text-surface-300">·</span>
-                  <span>{city}</span>
+                  <span className="text-[10px] text-surface-500">{seller.name}</span>
                 </div>
+                <span className="text-surface-200">·</span>
+                <span className="text-[10px] text-surface-400">{city}</span>
               </div>
-              <PriceTag price={price} originalPrice={originalPrice} size="sm" />
+
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-base font-black text-navy-800">
+                  {formatPrice(price)}
+                </span>
+                <span className="text-[10px] text-surface-400">تومان</span>
+              </div>
             </div>
           </div>
         </div>
-      </Card>
+      </div>
     </Link>
   );
 }
