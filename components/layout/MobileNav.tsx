@@ -59,9 +59,10 @@ const navItems = [
 interface MobileNavProps {
   currentUser?: User | null;
   unreadCount?: number;
+  sessionToken?: string | null;
 }
 
-export default function MobileNav({ currentUser, unreadCount = 0 }: MobileNavProps) {
+export default function MobileNav({ currentUser, unreadCount = 0, sessionToken }: MobileNavProps) {
   const pathname = usePathname();
   const [count, setCount] = useState(unreadCount);
 
@@ -70,15 +71,12 @@ export default function MobileNav({ currentUser, unreadCount = 0 }: MobileNavPro
   }, [unreadCount]);
 
   useEffect(() => {
-    if (!currentUser) return;
-    const cookies = document.cookie.split(";");
-    const sessionCookie = cookies.find((c) => c.trim().startsWith("socket-token="));
-    const token = sessionCookie?.split("=")[1];
-    if (!token) return;
+    if (!currentUser || !sessionToken) return;
 
-    const socket = connectSocket(token);
+    const socket = connectSocket(sessionToken);
 
-    const handleNewMessage = () => {
+    const handleNewMessage = (msg: any) => {
+      if (msg?.sender?._id === currentUser._id) return;
       setCount((prev) => prev + 1);
     };
 
@@ -86,7 +84,7 @@ export default function MobileNav({ currentUser, unreadCount = 0 }: MobileNavPro
     return () => {
       socket.off("new-message", handleNewMessage);
     };
-  }, [currentUser]);
+  }, [currentUser, sessionToken]);
 
   const items = navItems.map((item) => {
     if (item.href === "/dashboard" && !currentUser) {

@@ -1,4 +1,4 @@
-import { getCurrentUser, getMessages, getConversations } from "@/lib/auth-actions";
+import { getCurrentUser, getMessages, getConversations, getSessionToken } from "@/lib/auth-actions";
 import { redirect, notFound } from "next/navigation";
 import ChatView from "@/components/messages/ChatView";
 
@@ -13,21 +13,21 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
 
   const messages = await getMessages(id, user._id);
   if (messages.length === 0) {
-    // Check if conversation exists at all
     const conversations = await getConversations(user._id);
     const exists = conversations.some((c) => c._id === id);
     if (!exists) notFound();
   }
 
-  // Get conversation info for the header
   const conversations = await getConversations(user._id);
   const conversation = conversations.find((c) => c._id === id);
+  const sessionToken = await getSessionToken();
 
   return (
     <div className="max-w-3xl mx-auto h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4rem)] flex flex-col">
       <ChatView
         conversationId={id}
         currentUserId={user._id}
+        sessionToken={sessionToken}
         initialMessages={messages}
         otherUser={conversation?.otherUser}
         listing={conversation?.listing}

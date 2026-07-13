@@ -1,26 +1,22 @@
 # Improvement Plans
 
-Written against commit `01da541` (2026-07-13).
+Written against commit `d7c6fad` (2026-07-13).
 
 ## Execution Order
 
 | # | Plan | Category | Effort | Depends On |
 |---|------|----------|--------|------------|
-| 013 | Save images in createListingAction | Correctness | S | — |
-| 014 | Deduplicate province/city data | Tech Debt | S | — |
-| 015 | Custom 404 page | DX | S | — |
+| 016 | Add quick search to messages page | Feature | S | — |
 
-**Recommended order:** 013 → 014 → 015
+**Recommended order:** 016
 
-Rationale: 013 is a critical bug fix (images lost). 014 is a quick cleanup. 015 is a nice-to-have polish.
+Rationale: Single feature addition, no dependencies.
 
 ## Status
 
 | # | Status |
 |---|--------|
-| 013 | DONE |
-| 014 | DONE |
-| 015 | DONE |
+| 016 | DONE |
 
 ## Previous Plans
 

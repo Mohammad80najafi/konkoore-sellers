@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
+import mongoose from "mongoose";
 import { connectDB } from "./mongodb";
 import User from "./models/User";
 import Session from "./models/Session";
@@ -451,6 +452,11 @@ export async function createListingAction(data: {
 import Conversation from "./models/Conversation";
 import Message from "./models/Message";
 
+export async function getSessionToken(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get("session-token")?.value || null;
+}
+
 export async function getConversations(userId: string) {
   try {
     await connectDB();
@@ -528,8 +534,8 @@ export async function getMessages(conversationId: string, userId: string) {
         conversationId: conversationId,
         sender: {
           _id: obj.sender._id.toString(),
-          name: (obj.sender as any).name,
-          avatar: (obj.sender as any).avatar || "",
+          name: obj.sender.name,
+          avatar: obj.sender.avatar || "",
         },
         content: obj.content,
         image: obj.image || "",
@@ -549,10 +555,8 @@ export async function createConversation(
 ): Promise<{ success: boolean; conversationId?: string; error?: string }> {
   try {
     const userId = await assertAuthenticated();
-
     await connectDB();
 
-    // Check for existing conversation between these two users
     const query: any = {
       participants: { $all: [userId, participantId], $size: 2 },
     };
@@ -583,12 +587,11 @@ export async function getUnreadCount(userId: string): Promise<number> {
     await connectDB();
     const conversations = await Conversation.find({ participants: userId });
     const convIds = conversations.map((c) => c._id);
-    // Count conversations that have at least one unread message from someone else
     const result = await Message.aggregate([
       {
         $match: {
           conversation: { $in: convIds },
-          sender: { $ne: new (await import("mongoose")).default.Types.ObjectId(userId) },
+          sender: { $ne: new mongoose.Types.ObjectId(userId) },
           isRead: false,
         },
       },
@@ -610,7 +613,7 @@ export async function getUnreadCountsByConversation(userId: string): Promise<Rec
       {
         $match: {
           conversation: { $in: convIds },
-          sender: { $ne: new (await import("mongoose")).default.Types.ObjectId(userId) },
+          sender: { $ne: new mongoose.Types.ObjectId(userId) },
           isRead: false,
         },
       },
