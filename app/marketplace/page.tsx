@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import MarketplacePage from "@/components/marketplace/MarketplacePage";
-import { getAllListings, getActiveListingCount } from "@/lib/data";
+import { getAllListings } from "@/lib/data";
+import type { Listing } from "@/lib/types";
 
 export const metadata = {
   title: "بازار کتاب",
@@ -9,10 +10,8 @@ export const metadata = {
 };
 
 export default async function MarketplaceRoute() {
-  const [listings, totalCount] = await Promise.all([
-    getAllListings(100),
-    getActiveListingCount(),
-  ]);
+  const listings = await getAllListings(100);
+  const initialListings = JSON.parse(JSON.stringify(listings)) as Listing[];
 
   return (
     <Suspense
@@ -36,7 +35,7 @@ export default async function MarketplaceRoute() {
         </div>
       }
     >
-      <MarketplacePage initialListings={listings} totalCount={totalCount} />
+      <MarketplacePage initialListings={initialListings} />
     </Suspense>
   );
 }
