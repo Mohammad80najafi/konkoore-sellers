@@ -1,7 +1,10 @@
-import { getCurrentUser, getConversations, getUnreadCountsByConversation } from "@/lib/auth-actions";
+import { getCurrentUser, getSessionToken } from "@/lib/auth-actions";
+import {
+  getConversations,
+  getUnreadCountsByConversation,
+} from "@/lib/messages-data";
 import { redirect } from "next/navigation";
-import ConversationList from "@/components/messages/ConversationList";
-import NewConversation from "@/components/messages/NewConversation";
+import MessagesWorkspace from "@/components/messages/MessagesWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -14,20 +17,19 @@ export default async function MessagesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/auth/login");
 
-  const conversations = await getConversations(user._id);
-  const unreadCounts = await getUnreadCountsByConversation(user._id);
+  const [conversations, unreadCounts, sessionToken] = await Promise.all([
+    getConversations(user._id),
+    getUnreadCountsByConversation(user._id),
+    getSessionToken(),
+  ]);
+  if (!sessionToken) redirect("/auth/login");
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-navy-800">پیام‌ها</h1>
-        <NewConversation currentUserId={user._id} />
-      </div>
-      <ConversationList
-        conversations={conversations}
+    <MessagesWorkspace
         currentUserId={user._id}
-        unreadCounts={unreadCounts}
-      />
-    </div>
+        sessionToken={sessionToken}
+        initialConversations={conversations}
+        initialUnreadCounts={unreadCounts}
+    />
   );
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { toPersianDigits } from "@/lib/utils";
 import { BOOK_CONDITIONS } from "@/lib/constants";
-import { createConversation } from "@/lib/auth-actions";
+import { createMessageConversation } from "@/lib/message-actions";
 import type { Listing } from "@/lib/types";
 
 const fieldLabels: Record<string, string> = {
@@ -306,7 +306,7 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
             <button
               onClick={async () => {
                 setMessageLoading(true);
-                const res = await createConversation(seller._id, listing._id);
+                const res = await createMessageConversation(seller._id, listing._id);
                 if (res.success && res.conversationId) {
                   router.push(`/messages/${res.conversationId}`);
                 }

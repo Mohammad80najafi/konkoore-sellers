@@ -1,6 +1,7 @@
 import Header from "@/components/layout/Header";
 import MobileNav from "@/components/layout/MobileNav";
-import { getCurrentUser, getUnreadCount, getSessionToken } from "@/lib/auth-actions";
+import { getCurrentUser, getSessionToken } from "@/lib/auth-actions";
+import { getUnreadCount } from "@/lib/messages-data";
 
 export default async function MessagesLayout({ children }: { children: React.ReactNode }) {
   const currentUser = await getCurrentUser();
@@ -9,7 +10,7 @@ export default async function MessagesLayout({ children }: { children: React.Rea
 
   return (
     <>
-      <Header currentUser={currentUser} sessionToken={sessionToken} />
+      <Header currentUser={currentUser} />
       <main className="flex-1 pb-16 lg:pb-0">{children}</main>
       <MobileNav currentUser={currentUser} unreadCount={unreadCount} sessionToken={sessionToken} />
     </>

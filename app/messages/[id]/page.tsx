@@ -1,6 +1,11 @@
-import { getCurrentUser, getMessages, getConversations, getSessionToken } from "@/lib/auth-actions";
+import { getCurrentUser, getSessionToken } from "@/lib/auth-actions";
+import {
+  getConversations,
+  getMessages,
+  getUnreadCountsByConversation,
+} from "@/lib/messages-data";
 import { redirect, notFound } from "next/navigation";
-import ChatView from "@/components/messages/ChatView";
+import MessagesWorkspace from "@/components/messages/MessagesWorkspace";
 
 export const metadata = {
   title: "چت",
@@ -11,27 +16,23 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
   const user = await getCurrentUser();
   if (!user) redirect("/auth/login");
 
-  const messages = await getMessages(id, user._id);
-  if (messages.length === 0) {
-    const conversations = await getConversations(user._id);
-    const exists = conversations.some((c) => c._id === id);
-    if (!exists) notFound();
-  }
-
-  const conversations = await getConversations(user._id);
-  const conversation = conversations.find((c) => c._id === id);
-  const sessionToken = await getSessionToken();
+  const [messages, conversations, unreadCounts, sessionToken] = await Promise.all([
+    getMessages(id, user._id),
+    getConversations(user._id),
+    getUnreadCountsByConversation(user._id),
+    getSessionToken(),
+  ]);
+  if (!conversations.some((conversation) => conversation._id === id)) notFound();
+  if (!sessionToken) redirect("/auth/login");
 
   return (
-    <div className="max-w-3xl mx-auto h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4rem)] flex flex-col">
-      <ChatView
-        conversationId={id}
+      <MessagesWorkspace
         currentUserId={user._id}
         sessionToken={sessionToken}
+        initialConversations={conversations}
+        initialUnreadCounts={unreadCounts}
+        activeConversationId={id}
         initialMessages={messages}
-        otherUser={conversation?.otherUser}
-        listing={conversation?.listing}
       />
-    </div>
   );
 }

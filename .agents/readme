@@ -1,0 +1,15 @@
+## Ponytail Override
+
+Use Ponytail only to eliminate unnecessary code, dependencies, and abstractions.
+
+Minimal diff is NOT the primary objective when legacy code is duplicated,
+monkey-patched, fragmented, or architecturally incorrect.
+
+For affected legacy functionality:
+
+- rewrite functions cohesively instead of wrapping them
+- remove obsolete and duplicated code
+- remove redundant event listeners and initialization logic
+- consolidate shared behavior into proper utilities
+- prefer architectural correctness over preserving bad legacy structure
+- never keep monkey-patches merely because they produce a smaller diff

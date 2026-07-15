@@ -1,47 +1,112 @@
+import mongoose from "mongoose";
 import type { Server, Socket } from "socket.io";
 import { connectDB } from "./mongodb";
 import Session from "./models/Session";
 import User from "./models/User";
 import Message from "./models/Message";
 import Conversation from "./models/Conversation";
+import {
+  getConversationUnreadCount,
+  getUnreadCount,
+} from "./messages-data";
+import type {
+  ChatMessage,
+  SendMessagePayload,
+  SocketResult,
+} from "./message-types";
 
-interface AuthenticatedSocket extends Socket {
-  userId?: string;
+const MAX_MESSAGE_LENGTH = 2000;
+const UPLOAD_PATH = /^\/uploads\/[a-zA-Z0-9._-]+$/;
+
+type Reply = (result: SocketResult) => void;
+
+async function canAccessConversation(conversationId: string, userId: string) {
+  if (!mongoose.isValidObjectId(conversationId)) return false;
+  return Boolean(
+    await Conversation.exists({ _id: conversationId, participants: userId }),
+  );
+}
+
+async function emitUnreadState(
+  io: Server,
+  userId: string,
+  conversationId?: string,
+) {
+  const [total, conversationCount] = await Promise.all([
+    getUnreadCount(userId),
+    conversationId
+      ? getConversationUnreadCount(conversationId, userId)
+      : Promise.resolve(0),
+  ]);
+  io.to(`user:${userId}`).emit("unread-count", total);
+  if (conversationId) {
+    io.to(`user:${userId}`).emit("conversation-unread", {
+      conversationId,
+      count: conversationCount,
+    });
+  }
+}
+
+async function markConversationRead(
+  io: Server,
+  conversationId: string,
+  userId: string,
+) {
+  if (!(await canAccessConversation(conversationId, userId))) return;
+  await Message.updateMany(
+    {
+      conversation: conversationId,
+      sender: { $ne: userId },
+      isRead: false,
+    },
+    { isRead: true },
+  );
+  await emitUnreadState(io, userId, conversationId);
 }
 
 export function setupSocketServer(io: Server) {
-  io.on("connection", async (socket: AuthenticatedSocket) => {
-    const sessionToken = socket.handshake.auth?.token;
-
-    if (!sessionToken) {
-      socket.disconnect();
-      return;
-    }
-
+  io.use(async (socket, next) => {
     try {
+      const token = socket.handshake.auth?.token;
+      if (typeof token !== "string" || !token) {
+        next(new Error("unauthorized"));
+        return;
+      }
+
       await connectDB();
-      const session = await Session.findOne({ token: sessionToken });
-      if (!session || session.expiresAt < new Date()) {
-        socket.disconnect();
+      const session = await Session.findOne({
+        token,
+        expiresAt: { $gt: new Date() },
+      }).select("userId");
+      if (!session) {
+        next(new Error("unauthorized"));
         return;
       }
 
-      const user = await User.findById(session.userId);
+      const user = await User.findById(session.userId).select("name avatar");
       if (!user) {
-        socket.disconnect();
+        next(new Error("unauthorized"));
         return;
       }
 
-      socket.userId = user._id.toString();
-      socket.join(`user:${socket.userId}`);
-    } catch (err) {
-      console.error("[Socket] Auth error:", err);
-      socket.disconnect();
-      return;
+      socket.data.userId = session.userId.toString();
+      socket.data.userName = user.name;
+      socket.data.userAvatar = user.avatar || "";
+      next();
+    } catch (error) {
+      console.error("[Socket] Authentication failed:", error);
+      next(new Error("unauthorized"));
     }
+  });
 
-    socket.on("join-conversation", (conversationId: string) => {
+  io.on("connection", (socket: Socket) => {
+    const userId = socket.data.userId as string;
+    socket.join(`user:${userId}`);
+
+    socket.on("join-conversation", async (conversationId: string) => {
+      if (!(await canAccessConversation(conversationId, userId))) return;
       socket.join(`conversation:${conversationId}`);
+      await markConversationRead(io, conversationId, userId);
     });
 
     socket.on("leave-conversation", (conversationId: string) => {
@@ -50,93 +115,84 @@ export function setupSocketServer(io: Server) {
 
     socket.on(
       "send-message",
-      async (data: { conversationId: string; content: string; image?: string }) => {
-        if (!socket.userId) return;
-        if (!data.content?.trim() && !data.image) return;
-
+      async (payload: SendMessagePayload, reply?: Reply) => {
+        const respond = reply || (() => undefined);
         try {
-          await connectDB();
+          const conversationId = payload?.conversationId;
+          const content = payload?.content?.trim() || "";
+          const image = payload?.image || "";
 
-          const conversation = await Conversation.findById(data.conversationId);
-          if (!conversation) return;
           if (
-            !conversation.participants.some(
-              (p) => p.toString() === socket.userId,
-            )
-          )
+            !conversationId ||
+            (!content && !image) ||
+            content.length > MAX_MESSAGE_LENGTH ||
+            (image && !UPLOAD_PATH.test(image)) ||
+            !(await canAccessConversation(conversationId, userId))
+          ) {
+            respond({ ok: false, error: "پیام معتبر نیست." });
             return;
+          }
 
-          const message = await Message.create({
-            conversation: data.conversationId,
-            sender: socket.userId,
-            content: data.content?.trim() || "",
-            image: data.image || "",
-          });
-
-          await Conversation.findByIdAndUpdate(data.conversationId, {
-            lastMessage: message._id,
-            lastMessageAt: new Date(),
-          });
-
-          const populated = await Message.findById(message._id).populate(
-            "sender",
-            "name avatar",
+          const conversation = await Conversation.findById(conversationId).select(
+            "participants",
           );
+          if (!conversation) {
+            respond({ ok: false, error: "مکالمه پیدا نشد." });
+            return;
+          }
 
-          const msgObj = {
-            _id: populated!._id.toString(),
-            conversationId: data.conversationId,
+          const created = await Message.create({
+            conversation: conversationId,
+            sender: userId,
+            content,
+            image,
+          });
+          await Conversation.findByIdAndUpdate(conversationId, {
+            lastMessage: created._id,
+            lastMessageAt: created.createdAt,
+          });
+
+          const message: ChatMessage = {
+            _id: created._id.toString(),
+            conversationId,
             sender: {
-              _id: populated!.sender._id.toString(),
-              name: (populated!.sender as any).name,
-              avatar: (populated!.sender as any).avatar || "",
+              _id: userId,
+              name: socket.data.userName as string,
+              avatar: socket.data.userAvatar as string,
             },
-            content: populated!.content,
-            image: (populated as any).image || "",
+            content,
+            image,
             isRead: false,
-            createdAt: populated!.createdAt.toISOString(),
+            createdAt: created.createdAt.toISOString(),
           };
 
-          for (const participantId of conversation.participants) {
-            io.to(`user:${participantId.toString()}`).emit(
-              "new-message",
-              msgObj,
-            );
+          for (const participant of conversation.participants) {
+            io.to(`user:${participant.toString()}`).emit("new-message", message);
           }
-        } catch (err) {
-          console.error("[Socket] Send message error:", err);
+          respond({ ok: true, message });
+
+          await Promise.all(
+            conversation.participants
+              .map((participant) => participant.toString())
+              .filter((participantId) => participantId !== userId)
+              .map((participantId) =>
+                emitUnreadState(io, participantId, conversationId),
+              ),
+          );
+        } catch (error) {
+          console.error("[Socket] Send message failed:", error);
+          respond({ ok: false, error: "پیام ارسال نشد. دوباره تلاش کنید." });
         }
       },
     );
 
-    socket.on("typing", (data: { conversationId: string }) => {
-      if (!socket.userId) return;
-      socket.to(`conversation:${data.conversationId}`).emit("user-typing", {
-        conversationId: data.conversationId,
-        userId: socket.userId,
-      });
+    socket.on("mark-read", async (data: { conversationId?: string }) => {
+      if (!data?.conversationId) return;
+      await markConversationRead(io, data.conversationId, userId);
     });
 
-    socket.on("mark-read", async (data: { conversationId: string }) => {
-      if (!socket.userId) return;
-
-      try {
-        await connectDB();
-        await Message.updateMany(
-          {
-            conversation: data.conversationId,
-            sender: { $ne: socket.userId },
-            isRead: false,
-          },
-          { isRead: true },
-        );
-      } catch (err) {
-        console.error("[Socket] Mark read error:", err);
-      }
-    });
-
-    socket.on("disconnect", () => {
-      // cleanup if needed
+    void emitUnreadState(io, userId).catch((error) => {
+      console.error("[Socket] Unread sync failed:", error);
     });
   });
 }

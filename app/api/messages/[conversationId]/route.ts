@@ -1,29 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMessages } from "@/lib/auth-actions";
-import { cookies } from "next/headers";
-import { connectDB } from "@/lib/mongodb";
-import Session from "@/lib/models/Session";
-
-async function getUserIdFromCookie(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("session-token")?.value;
-  if (!sessionToken) return null;
-  await connectDB();
-  const session = await Session.findOne({ token: sessionToken });
-  if (!session || session.expiresAt < new Date()) return null;
-  return session.userId.toString();
-}
+import { getMessages } from "@/lib/messages-data";
+import { getCurrentUser } from "@/lib/auth-actions";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ conversationId: string }> }
 ) {
   const { conversationId } = await params;
-  const userId = await getUserIdFromCookie();
-  if (!userId) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const messages = await getMessages(conversationId, userId);
+  const messages = await getMessages(conversationId, user._id);
   return NextResponse.json({ messages });
 }

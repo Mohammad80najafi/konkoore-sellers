@@ -1,33 +1,29 @@
 "use client";
 
-import { io, Socket } from "socket.io-client";
+import { io, type Socket } from "socket.io-client";
 
 let socket: Socket | null = null;
 
 export function getSocket(): Socket {
-  if (socket) return socket;
-
-  socket = io(typeof window !== "undefined" ? window.location.origin : "", {
-    path: "/api/socketio",
-    auth: {},
-    autoConnect: false,
-  });
-
+  if (!socket) {
+    socket = io(window.location.origin, {
+      path: "/api/socketio",
+      autoConnect: false,
+      reconnection: true,
+      reconnectionDelayMax: 5000,
+    });
+  }
   return socket;
 }
 
-export function connectSocket(token: string) {
-  const s = getSocket();
-  s.auth = { token };
-  if (!s.connected) {
-    s.connect();
-  }
-  return s;
+export function connectSocket(token: string): Socket {
+  const activeSocket = getSocket();
+  activeSocket.auth = { token };
+  if (!activeSocket.connected) activeSocket.connect();
+  return activeSocket;
 }
 
 export function disconnectSocket() {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
+  socket?.disconnect();
+  socket = null;
 }

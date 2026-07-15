@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
@@ -8,7 +8,6 @@ import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { User } from "@/lib/types";
 import { logoutAction } from "@/lib/auth-actions";
-import { connectSocket, getSocket } from "@/lib/socket-client";
 
 const navLinks = [
   { href: "/marketplace", label: "بازار کتاب" },
@@ -18,35 +17,13 @@ const navLinks = [
 
 interface HeaderProps {
   currentUser?: User | null;
-  sessionToken?: string | null;
 }
 
-export default function Header({ currentUser, sessionToken }: HeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export default function Header({ currentUser }: HeaderProps) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [connected, setConnected] = useState(false);
   const pathname = usePathname();
   const isMessages = pathname.startsWith("/messages");
-
-  useEffect(() => {
-    if (!isMessages || !sessionToken) return;
-
-    const socket = connectSocket(sessionToken);
-    setConnected(socket.connected);
-
-    const onConnect = () => setConnected(true);
-    const onDisconnect = () => setConnected(false);
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-    socket.on("connect_error", onDisconnect);
-
-    return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      socket.off("connect_error", onDisconnect);
-    };
-  }, [isMessages, sessionToken]);
 
   const handleLogout = async () => {
     const res = await logoutAction();
@@ -83,13 +60,6 @@ export default function Header({ currentUser, sessionToken }: HeaderProps) {
           <Link href="/" className="shrink-0" aria-label="صفحه اصلی کنکورباز">
             <Logo size="md" />
           </Link>
-
-          {/* Connecting indicator on messages page */}
-          {isMessages && !connected && (
-            <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full font-medium animate-pulse">
-              درحال اتصال...
-            </span>
-          )}
 
           {/* Search bar — hidden on mobile */}
           <div className="hidden md:flex flex-1 max-w-xl">

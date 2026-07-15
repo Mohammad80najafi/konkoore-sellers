@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { connectSocket, getSocket } from "@/lib/socket-client";
+import { connectSocket } from "@/lib/socket-client";
 import type { User } from "@/lib/types";
 
 const navItems = [
@@ -67,22 +67,15 @@ export default function MobileNav({ currentUser, unreadCount = 0, sessionToken }
   const [count, setCount] = useState(unreadCount);
 
   useEffect(() => {
-    setCount(unreadCount);
-  }, [unreadCount]);
-
-  useEffect(() => {
     if (!currentUser || !sessionToken) return;
 
     const socket = connectSocket(sessionToken);
 
-    const handleNewMessage = (msg: any) => {
-      if (msg?.sender?._id === currentUser._id) return;
-      setCount((prev) => prev + 1);
-    };
+    const handleUnreadCount = (nextCount: number) => setCount(nextCount);
 
-    socket.on("new-message", handleNewMessage);
+    socket.on("unread-count", handleUnreadCount);
     return () => {
-      socket.off("new-message", handleNewMessage);
+      socket.off("unread-count", handleUnreadCount);
     };
   }, [currentUser, sessionToken]);
 
