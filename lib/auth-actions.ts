@@ -71,38 +71,10 @@ export async function getCurrentUser(): Promise<UserType | null> {
   }
 }
 
-// Check if user exists by phone number
-export async function checkUserAction(
+// Check the phone and create its OTP in one round trip.
+export async function requestOtpAction(
   phoneInput: string
-): Promise<{ success: boolean; exists: boolean; name?: string; error?: string }> {
-  try {
-    const normalizedPhone = normalizePhone(phoneInput);
-    if (!/^09\d{9}$/.test(normalizedPhone)) {
-      return {
-        success: false,
-        exists: false,
-        error: "شماره موبایل وارد شده معتبر نیست. باید با ۰۹ شروع شده و ۱۱ رقم باشد.",
-      };
-    }
-
-    await connectDB();
-
-    const user = await User.findOne({ phone: normalizedPhone });
-    return { success: true, exists: !!user, name: user?.name };
-  } catch (error) {
-    console.error("Check user action error:", error);
-    return {
-      success: false,
-      exists: false,
-      error: "خطایی در بررسی شماره موبایل رخ داده است.",
-    };
-  }
-}
-
-// Send OTP code to a phone number (dev: logs to console)
-export async function sendOtpAction(
-  phoneInput: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; exists?: boolean; devCode?: string; error?: string }> {
   try {
     const normalizedPhone = normalizePhone(phoneInput);
     if (!/^09\d{9}$/.test(normalizedPhone)) {
@@ -111,11 +83,16 @@ export async function sendOtpAction(
     if (!canSendOtp(normalizedPhone)) {
       return { success: false, error: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً ۵ دقیقه صبر کنید." };
     }
-    await generateOtp(normalizedPhone);
-    return { success: true };
+    await connectDB();
+    const [user, code] = await Promise.all([
+      User.exists({ phone: normalizedPhone }),
+      generateOtp(normalizedPhone),
+    ]);
+    // ponytail: reveal the code until a real SMS provider is wired; remove devCode then.
+    return { success: true, exists: !!user, devCode: code };
   } catch (error) {
-    console.error("Send OTP error:", error);
-    return { success: false, error: "خطایی در ارسال کد رخ داد." };
+    console.error("Request OTP error:", error);
+    return { success: false, error: "خطایی در ساخت کد ورود رخ داد." };
   }
 }
 
