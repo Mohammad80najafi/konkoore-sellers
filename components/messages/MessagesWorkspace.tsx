@@ -94,11 +94,15 @@ export default function MessagesWorkspace({
   const [connection, setConnection] = useState<
     "connecting" | "online" | "offline"
   >("connecting");
+  const [otherUserOnline, setOtherUserOnline] = useState<boolean | null>(null);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const typingTimerRef = useRef<number | null>(null);
+  const remoteTypingTimerRef = useRef<number | null>(null);
   const activeConversation = conversations.find(
     (conversation) => conversation._id === activeConversationId,
   );
@@ -118,13 +122,25 @@ export default function MessagesWorkspace({
 
   useEffect(() => {
     const socket = connectSocket(sessionToken);
+    const otherUserId = activeConversation?.otherUser?._id;
 
     const joinActiveConversation = () => {
       setConnection("online");
-      if (activeConversationId)
+      if (activeConversationId) {
         socket.emit("join-conversation", activeConversationId);
+        if (otherUserId) {
+          socket.emit("presence:subscribe", {
+            conversationId: activeConversationId,
+            userId: otherUserId,
+          });
+        }
+      }
     };
-    const handleDisconnect = () => setConnection("offline");
+    const handleDisconnect = () => {
+      setConnection("offline");
+      setOtherUserOnline(null);
+      setOtherUserTyping(false);
+    };
     const handleNewMessage = (message: ChatMessage) => {
       setConversations((current) => {
         const index = current.findIndex(
@@ -167,6 +183,29 @@ export default function MessagesWorkspace({
         [data.conversationId]: data.count,
       }));
     };
+    const handlePresence = (data: { userId: string; online: boolean }) => {
+      if (data.userId === otherUserId) setOtherUserOnline(data.online);
+    };
+    const handleTyping = (data: {
+      conversationId: string;
+      userId: string;
+      isTyping: boolean;
+    }) => {
+      if (
+        data.conversationId !== activeConversationId ||
+        data.userId !== otherUserId
+      )
+        return;
+      setOtherUserTyping(data.isTyping);
+      if (remoteTypingTimerRef.current)
+        window.clearTimeout(remoteTypingTimerRef.current);
+      if (data.isTyping) {
+        remoteTypingTimerRef.current = window.setTimeout(
+          () => setOtherUserTyping(false),
+          3000,
+        );
+      }
+    };
 
     if (socket.connected) queueMicrotask(joinActiveConversation);
     socket.on("connect", joinActiveConversation);
@@ -174,17 +213,35 @@ export default function MessagesWorkspace({
     socket.on("connect_error", handleDisconnect);
     socket.on("new-message", handleNewMessage);
     socket.on("conversation-unread", handleConversationUnread);
+    socket.on("presence", handlePresence);
+    socket.on("typing", handleTyping);
 
     return () => {
-      if (activeConversationId)
+      if (activeConversationId) {
+        socket.emit("typing", {
+          conversationId: activeConversationId,
+          isTyping: false,
+        });
         socket.emit("leave-conversation", activeConversationId);
+      }
+      if (otherUserId) socket.emit("presence:unsubscribe", otherUserId);
+      if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
+      if (remoteTypingTimerRef.current)
+        window.clearTimeout(remoteTypingTimerRef.current);
       socket.off("connect", joinActiveConversation);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleDisconnect);
       socket.off("new-message", handleNewMessage);
       socket.off("conversation-unread", handleConversationUnread);
+      socket.off("presence", handlePresence);
+      socket.off("typing", handleTyping);
     };
-  }, [activeConversationId, currentUserId, sessionToken]);
+  }, [
+    activeConversation?.otherUser?._id,
+    activeConversationId,
+    currentUserId,
+    sessionToken,
+  ]);
 
   useEffect(() => {
     if (!activeConversationId || connection !== "offline") return;
@@ -250,6 +307,11 @@ export default function MessagesWorkspace({
     setSending(true);
     setError("");
     const socket = connectSocket(sessionToken);
+    socket.emit("typing", {
+      conversationId: activeConversationId,
+      isTyping: false,
+    });
+    if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
     socket
       .timeout(8000)
       .emit(
@@ -272,6 +334,34 @@ export default function MessagesWorkspace({
           }
         },
       );
+  };
+
+  const handleDraftChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    setDraft(value);
+    if (!activeConversationId || connection !== "online") return;
+
+    const socket = connectSocket(sessionToken);
+    const isTyping = Boolean(value.trim());
+    socket.emit("typing", { conversationId: activeConversationId, isTyping });
+    if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
+    if (isTyping) {
+      typingTimerRef.current = window.setTimeout(() => {
+        socket.emit("typing", {
+          conversationId: activeConversationId,
+          isTyping: false,
+        });
+      }, 1200);
+    }
+  };
+
+  const stopTyping = () => {
+    if (!activeConversationId || connection !== "online") return;
+    if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current);
+    connectSocket(sessionToken).emit("typing", {
+      conversationId: activeConversationId,
+      isTyping: false,
+    });
   };
 
   const handleComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -370,7 +460,7 @@ export default function MessagesWorkspace({
                   <p className="text-surface-500 mt-1 text-xs leading-6">
                     {search
                       ? "عبارت دیگری را امتحان کنید."
-                      : "از صفحه یک کتاب به فروشنده پیام بدهید."}
+                      : "از صفحه یک کتاب به اهداکننده پیام بدهید."}
                   </p>
                 </div>
               ) : (
@@ -505,7 +595,7 @@ export default function MessagesWorkspace({
                       <p
                         className={cn(
                           "mt-0.5 flex items-center gap-1.5 text-[11px]",
-                          connection === "online"
+                          otherUserTyping || otherUserOnline
                             ? "text-success-600"
                             : "text-surface-400",
                         )}
@@ -513,18 +603,22 @@ export default function MessagesWorkspace({
                         <span
                           className={cn(
                             "h-1.5 w-1.5 rounded-full",
-                            connection === "online"
+                            otherUserTyping
+                              ? "bg-success-500 animate-pulse"
+                              : otherUserOnline
                               ? "bg-success-500"
-                              : connection === "connecting"
+                              : otherUserOnline === null
                                 ? "bg-accent-500 animate-pulse"
                                 : "bg-surface-300",
                           )}
                         />
-                        {connection === "online"
-                          ? "پیام‌رسان آماده است"
-                          : connection === "connecting"
-                            ? "در حال اتصال..."
-                            : "در حال اتصال دوباره..."}
+                        {otherUserTyping
+                          ? "در حال نوشتن…"
+                          : otherUserOnline === null
+                            ? "در حال بررسی وضعیت…"
+                            : otherUserOnline
+                              ? "آنلاین"
+                              : "آفلاین"}
                       </p>
                     </div>
                   </div>
@@ -704,7 +798,8 @@ export default function MessagesWorkspace({
                       <span className="sr-only">متن پیام</span>
                       <textarea
                         value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
+                        onChange={handleDraftChange}
+                        onBlur={stopTyping}
                         onKeyDown={handleComposerKeyDown}
                         maxLength={2000}
                         rows={1}
@@ -756,11 +851,11 @@ export default function MessagesWorkspace({
                     </span>
                   </div>
                   <h2 className="text-navy-950 mt-6 text-xl font-black">
-                    خرید خوب با یک سؤال شروع می‌شود
+                    دریافت خوب با یک سؤال شروع می‌شود
                   </h2>
                   <p className="text-surface-500 mt-2 text-sm leading-7">
                     یک گفت‌وگو را انتخاب کنید و درباره کتاب، ارسال و تحویل با
-                    فروشنده هماهنگ شوید.
+                    اهداکننده هماهنگ شوید.
                   </p>
                   <button
                     type="button"

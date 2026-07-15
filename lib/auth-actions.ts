@@ -302,8 +302,6 @@ export async function createListingAction(data: {
   field: string;
   grade: string;
   subject: string;
-  originalPrice: number;
-  price: number;
   condition: string;
   year: number;
   edition?: number;
@@ -325,20 +323,6 @@ export async function createListingAction(data: {
   try {
     const sellerId = await assertAuthenticated();
 
-    // Validate prices
-    if (!data.price || data.price < 1000) {
-      return { success: false, error: "قیمت فروش باید حداقل ۱,۰۰۰ تومان باشد." };
-    }
-    if (data.price > 50000000) {
-      return { success: false, error: "قیمت فروش نمی‌تواند بیش از ۵۰ میلیون تومان باشد." };
-    }
-    if (!data.originalPrice || data.originalPrice < 1000) {
-      return { success: false, error: "قیمت نو کتاب باید حداقل ۱,۰۰۰ تومان باشد." };
-    }
-    if (data.price > data.originalPrice) {
-      return { success: false, error: "قیمت فروش نمی‌تواند بیشتر از قیمت نو باشد." };
-    }
-
     // Validate year
     const currentYear = new Date().getFullYear();
     const iranYear = currentYear - 621;
@@ -359,11 +343,11 @@ export async function createListingAction(data: {
         field: data.field as FieldOfStudy,
         grade: data.grade as Grade,
         subject: data.subject,
-        originalPrice: data.originalPrice,
+        originalPrice: 0,
       },
       seller: sellerId,
-      price: data.price,
-      originalPrice: data.originalPrice,
+      price: 0,
+      originalPrice: 0,
       condition: {
         grade: data.condition as BookConditionId,
         highlighting: data.highlighting || false,
@@ -388,7 +372,7 @@ export async function createListingAction(data: {
       shippingAvailable: data.shippingAvailable,
       pickupAvailable: data.pickupAvailable,
       isBundle: false,
-      priceIndicator: data.price > data.originalPrice * 0.5 ? "fair" : "great",
+      priceIndicator: "fair",
       views: 0,
       favorites: 0,
       status: "active",

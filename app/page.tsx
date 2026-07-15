@@ -27,13 +27,13 @@ export default async function HomePage() {
       <CategoryCards />
       <BookSection
         title="پیشنهادی برای شما"
-        subtitle="کتاب‌های پرطرفدار با بهترین قیمت"
+        subtitle="کتاب‌هایی که می‌توانند به دست تو برسند"
         listings={recommended}
         viewAllHref="/marketplace?sort=views"
       />
       <BookSection
         title="تازه‌ترین کتاب‌ها"
-        subtitle="آخرین کتاب‌های اضافه شده به بازار"
+        subtitle="تازه‌ترین کتاب‌های آماده اهدا"
         listings={recent}
         viewAllHref="/marketplace?sort=newest"
         surface

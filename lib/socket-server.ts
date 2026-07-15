@@ -65,6 +65,8 @@ async function markConversationRead(
 }
 
 export function setupSocketServer(io: Server) {
+  const onlineSockets = new Map<string, Set<string>>();
+
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token;
@@ -103,6 +105,42 @@ export function setupSocketServer(io: Server) {
     const userId = socket.data.userId as string;
     socket.join(`user:${userId}`);
 
+    const userSockets = onlineSockets.get(userId) || new Set<string>();
+    const wasOffline = userSockets.size === 0;
+    userSockets.add(socket.id);
+    onlineSockets.set(userId, userSockets);
+    if (wasOffline) {
+      io.to(`presence:${userId}`).emit("presence", { userId, online: true });
+    }
+
+    socket.on(
+      "presence:subscribe",
+      async (data: { conversationId?: string; userId?: string }) => {
+        const conversationId = data?.conversationId;
+        const targetUserId = data?.userId;
+        if (
+          !conversationId ||
+          !targetUserId ||
+          !mongoose.isValidObjectId(targetUserId) ||
+          !(await Conversation.exists({
+            _id: conversationId,
+            participants: { $all: [userId, targetUserId] },
+          }))
+        )
+          return;
+
+        socket.join(`presence:${targetUserId}`);
+        socket.emit("presence", {
+          userId: targetUserId,
+          online: Boolean(onlineSockets.get(targetUserId)?.size),
+        });
+      },
+    );
+
+    socket.on("presence:unsubscribe", (targetUserId: string) => {
+      socket.leave(`presence:${targetUserId}`);
+    });
+
     socket.on("join-conversation", async (conversationId: string) => {
       if (!(await canAccessConversation(conversationId, userId))) return;
       socket.join(`conversation:${conversationId}`);
@@ -112,6 +150,23 @@ export function setupSocketServer(io: Server) {
     socket.on("leave-conversation", (conversationId: string) => {
       socket.leave(`conversation:${conversationId}`);
     });
+
+    socket.on(
+      "typing",
+      (data: { conversationId?: string; isTyping?: boolean }) => {
+        const conversationId = data?.conversationId;
+        if (
+          !conversationId ||
+          !socket.rooms.has(`conversation:${conversationId}`)
+        )
+          return;
+        socket.to(`conversation:${conversationId}`).emit("typing", {
+          conversationId,
+          userId,
+          isTyping: Boolean(data.isTyping),
+        });
+      },
+    );
 
     socket.on(
       "send-message",
@@ -193,6 +248,25 @@ export function setupSocketServer(io: Server) {
 
     void emitUnreadState(io, userId).catch((error) => {
       console.error("[Socket] Unread sync failed:", error);
+    });
+
+    socket.on("disconnecting", () => {
+      for (const room of socket.rooms) {
+        if (!room.startsWith("conversation:")) continue;
+        socket.to(room).emit("typing", {
+          conversationId: room.slice("conversation:".length),
+          userId,
+          isTyping: false,
+        });
+      }
+    });
+
+    socket.on("disconnect", () => {
+      const remainingSockets = onlineSockets.get(userId);
+      remainingSockets?.delete(socket.id);
+      if (remainingSockets?.size) return;
+      onlineSockets.delete(userId);
+      io.to(`presence:${userId}`).emit("presence", { userId, online: false });
     });
   });
 }

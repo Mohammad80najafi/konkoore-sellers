@@ -129,14 +129,14 @@ export default function LoginPage() {
           <div className="relative z-10 my-auto max-w-xl py-14">
             <p className="mb-5 flex items-center gap-3 text-sm font-semibold text-accent-300">
               <span className="h-px w-10 bg-accent-400" />
-              بازار کتاب‌های دست‌دوم کنکور
+              سامانه اهدای کتاب‌های کنکور
             </p>
             <h2 className="text-balance text-4xl font-black leading-[1.55] xl:text-5xl">
               یک کتاب، دو مسیر؛
-              <span className="block text-accent-300">کم‌هزینه‌تر بخوان، ساده‌تر بفروش.</span>
+              <span className="block text-accent-300">بخون و ببخش.</span>
             </h2>
             <p className="mt-6 max-w-lg text-base leading-8 text-navy-100">
-              با شماره موبایل وارد شو و خرید، فروش و گفت‌وگوهایت را از همان‌جایی که رها کردی ادامه بده.
+              با شماره موبایل وارد شو و کتاب‌های اهدایی، درخواست‌ها و گفت‌وگوهایت را از همان‌جایی که رها کردی ادامه بده.
             </p>
 
             <div className="mt-12 grid grid-cols-3 border-y border-white/10 py-6">
@@ -157,7 +157,7 @@ export default function LoginPage() {
           </div>
 
           <p className="relative z-10 text-xs text-navy-300">
-            کنکورباز · خرید و فروش مستقیم میان دانش‌آموزان
+            کنکورباز · اهدای مستقیم میان دانش‌آموزان
           </p>
         </section>
 

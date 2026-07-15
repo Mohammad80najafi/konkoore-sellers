@@ -1,6 +1,5 @@
 import StarRating from "@/components/ui/StarRating";
 import { TESTIMONIALS } from "@/lib/constants";
-import { formatPrice } from "@/lib/utils";
 
 export default function Testimonials() {
   return (
@@ -13,7 +12,7 @@ export default function Testimonials() {
           </div>
           <div className="hidden items-center gap-2 rounded-full bg-success-50 px-3 py-2 text-xs font-bold text-success-700 md:flex">
             <span className="text-sm">★</span>
-            رضایت خریدار و فروشنده
+            رضایت گیرنده و اهداکننده
           </div>
         </div>
 
@@ -31,11 +30,7 @@ export default function Testimonials() {
                 {testimonial.text}
               </p>
 
-              {testimonial.savedAmount > 0 ? (
-                <div className={`mt-5 inline-flex self-start rounded-full px-3 py-1.5 text-[11px] font-bold ${index === 0 ? "bg-white/10 text-success-300" : "bg-success-50 text-success-700"}`}>
-                  {formatPrice(testimonial.savedAmount)} صرفه‌جویی
-                </div>
-              ) : null}
+              <div className={`mt-5 inline-flex self-start rounded-full px-3 py-1.5 text-[11px] font-bold ${index === 0 ? "bg-white/10 text-success-300" : "bg-success-50 text-success-700"}`}>بخون و ببخش</div>
 
               <div className={`mt-5 flex items-center gap-3 border-t pt-4 ${index === 0 ? "border-white/10" : "border-surface-100"}`}>
                 <span className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${index === 0 ? "bg-white/10 text-white" : "bg-navy-100 text-navy-700"}`}>

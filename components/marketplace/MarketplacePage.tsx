@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import FilterSidebar from "./FilterSidebar";
 import SortBar from "./SortBar";
-import { calculateDiscount, toPersianDigits, cn, formatPrice } from "@/lib/utils";
+import { toPersianDigits, cn } from "@/lib/utils";
 import type { FilterState, Listing } from "@/lib/types";
 
 const fieldLabels: Record<string, string> = {
@@ -25,8 +25,6 @@ function filterListings(listings: Listing[], filters: FilterState): Listing[] {
     if (filters.grade && listing.book.grade !== filters.grade) return false;
     if (filters.subject && listing.book.subject !== filters.subject) return false;
     if (filters.condition && listing.condition.grade !== filters.condition) return false;
-    if (filters.minPrice && listing.price < filters.minPrice) return false;
-    if (filters.maxPrice && listing.price > filters.maxPrice) return false;
     if (filters.province && listing.province !== filters.province) return false;
     if (filters.shippingAvailable && !listing.shippingAvailable) return false;
     if (filters.pickupAvailable && !listing.pickupAvailable) return false;
@@ -46,14 +44,6 @@ function sortListings(listings: Listing[], sort: string): Listing[] {
       return sorted.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-    case "price-asc":
-      return sorted.sort((a, b) => a.price - b.price);
-    case "discount":
-      return sorted.sort((a, b) => {
-        const discA = (a.originalPrice - a.price) / a.originalPrice;
-        const discB = (b.originalPrice - b.price) / b.originalPrice;
-        return discB - discA;
-      });
     case "condition": {
       const conditionOrder: Record<string, number> = {
         "like-new": 5,
@@ -83,8 +73,6 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
     grade: (searchParams.get("grade") as FilterState["grade"]) || undefined,
     subject: searchParams.get("subject") || undefined,
     condition: (searchParams.get("condition") as FilterState["condition"]) || undefined,
-    minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
-    maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
     province: searchParams.get("province") || undefined,
     shippingAvailable: searchParams.get("shipping") === "true" || undefined,
     pickupAvailable: searchParams.get("pickup") === "true" || undefined,
@@ -119,8 +107,6 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
         filters.grade,
         filters.subject,
         filters.condition,
-        filters.minPrice,
-        filters.maxPrice,
         filters.province,
         filters.shippingAvailable,
         filters.pickupAvailable,
@@ -156,16 +142,16 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
           خانه
         </Link>
         <span className="mx-2 text-surface-300">/</span>
-        <span className="text-navy-700 font-medium">بازار کتاب</span>
+        <span className="text-navy-700 font-medium">کتاب‌های اهدایی</span>
       </nav>
 
       {/* Page title */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-navy-800">
-          بازار کتاب کنکورباز
+          کتاب‌های اهدایی کنکورباز
         </h1>
         <p className="text-sm text-surface-500 mt-1.5">
-          {filteredListings.length} کتاب دست دوم موجود — ارزان‌تر بخر، راحت‌تر بفروش
+          {filteredListings.length} کتاب آماده اهدا — بخون و ببخش
         </p>
       </div>
 
@@ -281,10 +267,9 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
 }
 
 function GridCard({ listing }: { listing: Listing }) {
-  const { book, price, originalPrice, condition, seller, city, isBundle, images } =
+  const { book, condition, seller, city, isBundle, images } =
     listing;
   const coverImage = images?.find((img) => img.url && img.url.trim() !== "")?.url;
-  const discount = originalPrice > price ? calculateDiscount(originalPrice, price) : 0;
 
   return (
     <Link
@@ -307,11 +292,9 @@ function GridCard({ listing }: { listing: Listing }) {
             />
           )}
 
-          {discount > 0 && (
-            <span className="absolute left-3 top-3 rounded-lg bg-danger-500 px-2.5 py-1 text-xs font-black text-white shadow-sm">
-              {toPersianDigits(discount)}٪ تخفیف
-            </span>
-          )}
+          <span className="absolute left-3 top-3 rounded-lg bg-success-600 px-2.5 py-1 text-xs font-black text-white shadow-sm">
+            اهدای رایگان
+          </span>
 
           <div className="absolute right-3 top-3 flex items-center gap-1.5">
             {isBundle && (
@@ -333,11 +316,7 @@ function GridCard({ listing }: { listing: Listing }) {
                 {book.author} <span className="text-surface-300">•</span> {book.publisher.name}
               </p>
             </div>
-            {listing.priceIndicator === "great" && (
-              <span className="shrink-0 rounded-full bg-success-50 px-2 py-1 text-[10px] font-bold text-success-700">
-                قیمت عالی
-              </span>
-            )}
+            <span className="shrink-0 rounded-full bg-accent-50 px-2 py-1 text-[10px] font-bold text-accent-700">بخون و ببخش</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -347,19 +326,7 @@ function GridCard({ listing }: { listing: Listing }) {
             <ConditionBadge condition={condition.grade} size="sm" className="text-[11px]" />
           </div>
 
-          <div className="mt-4 min-h-16 border-t border-surface-100 pt-3.5">
-            <span className="block text-[10px] font-medium text-surface-400">قیمت فروش</span>
-            <span className="mt-0.5 block whitespace-nowrap text-[17px] font-black tracking-tight text-navy-800">
-              {formatPrice(price)}
-            </span>
-              {discount > 0 && (
-                <span className="mt-0.5 block whitespace-nowrap text-[10px] text-surface-400 line-through">
-                  {formatPrice(originalPrice)}
-                </span>
-              )}
-          </div>
-
-          <div className="mt-auto flex items-center justify-between gap-3 border-t border-surface-100 pt-3">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-surface-100 pt-3">
             <div className="flex min-w-0 items-center gap-2">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-navy-50 text-[10px] font-black text-navy-600">
                 {seller.name ? seller.name[0] : "ک"}
@@ -380,10 +347,9 @@ function GridCard({ listing }: { listing: Listing }) {
 }
 
 function ListCard({ listing }: { listing: Listing }) {
-  const { book, price, originalPrice, condition, seller, city, isBundle, images } =
+  const { book, condition, seller, city, isBundle, images } =
     listing;
   const coverImage = images?.find((img) => img.url && img.url.trim() !== "")?.url;
-  const discount = originalPrice > price ? calculateDiscount(originalPrice, price) : 0;
 
   return (
     <Link
@@ -407,11 +373,7 @@ function ListCard({ listing }: { listing: Listing }) {
               />
             )}
 
-            {discount > 0 && (
-              <span className="absolute left-3 top-3 rounded-lg bg-danger-500 px-2.5 py-1 text-[11px] font-black text-white shadow-sm">
-                {toPersianDigits(discount)}٪ تخفیف
-              </span>
-            )}
+            <span className="absolute left-3 top-3 rounded-lg bg-success-600 px-2.5 py-1 text-[11px] font-black text-white shadow-sm">اهدای رایگان</span>
 
             {isBundle && (
               <span className="absolute right-3 top-3 rounded-lg border border-white/70 bg-white/90 px-2 py-1 text-[10px] font-bold text-navy-700 shadow-sm backdrop-blur-sm">
@@ -430,11 +392,7 @@ function ListCard({ listing }: { listing: Listing }) {
                 {book.author} · {book.publisher.name}
                 </p>
               </div>
-              {listing.priceIndicator === "great" && (
-                <span className="shrink-0 rounded-full bg-success-50 px-2.5 py-1 text-[10px] font-bold text-success-700">
-                  قیمت عالی
-                </span>
-              )}
+              <span className="shrink-0 rounded-full bg-accent-50 px-2.5 py-1 text-[10px] font-bold text-accent-700">بخون و ببخش</span>
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -455,16 +413,7 @@ function ListCard({ listing }: { listing: Listing }) {
                 </div>
               </div>
 
-              <div className="text-left">
-                {discount > 0 && (
-                  <span className="block text-[10px] text-surface-400 line-through">
-                    {formatPrice(originalPrice)}
-                  </span>
-                )}
-                <span className="block text-lg font-black tracking-tight text-navy-800">
-                  {formatPrice(price)}
-                </span>
-              </div>
+              <span className="rounded-full bg-success-50 px-3 py-1.5 text-xs font-black text-success-700">برای اهدا</span>
             </div>
           </div>
         </div>

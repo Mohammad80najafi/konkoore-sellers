@@ -42,16 +42,16 @@ const vazirmatn = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "کنکورباز — خرید و فروش کتاب دست دوم کنکور",
+    default: "کنکورباز — اهدای کتاب کنکور | بخون و ببخش",
     template: "%s | کنکورباز",
   },
   description:
-    "بازار آنلاین خرید و فروش کتاب‌های دست دوم کنکور. کتاب‌های تجربی، ریاضی، انسانی، هنر و زبان را ارزان‌تر بخرید یا کتاب‌هایتان را بفروشید.",
+    "سامانه اهدای رایگان کتاب‌های دست دوم کنکور. کتاب مورد نیازت را پیدا کن یا کتاب‌هایت را به دانش‌آموز بعدی ببخش.",
   keywords: [
     "کنکور",
     "کتاب دست دوم",
-    "خرید کتاب کنکور",
-    "فروش کتاب کنکور",
+    "اهدای کتاب کنکور",
+    "کتاب کنکور رایگان",
     "کتاب تجربی",
     "کتاب ریاضی",
     "کتاب انسانی",
@@ -59,9 +59,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "کنکورباز" }],
   openGraph: {
-    title: "کنکورباز — خرید و فروش کتاب دست دوم کنکور",
+    title: "کنکورباز — بخون و ببخش",
     description:
-      "کتاب‌های کنکورت رو ارزون‌تر بخر، راحت‌تر بفروش. بازار آنلاین کتاب‌های دست دوم کنکور.",
+      "کتاب کنکورت را رایگان پیدا کن یا به دانش‌آموز بعدی ببخش. بخون و ببخش.",
     siteName: "کنکورباز",
     locale: "fa_IR",
     type: "website",
@@ -81,6 +81,7 @@ export default function RootLayout({
     <html
       lang="fa"
       dir="rtl"
+      data-scroll-behavior="smooth"
       className={`${vazirmatn.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

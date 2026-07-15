@@ -3,7 +3,7 @@
 export const SITE_NAME = "کنکورباز";
 export const SITE_NAME_EN = "KonkoorBaz";
 export const SITE_DESCRIPTION =
-  "بازار خرید و فروش کتاب‌های دست دوم کنکور — ارزان‌تر بخر، راحت‌تر بفروش";
+  "سامانه اهدای رایگان کتاب‌های دست دوم کنکور — بخون و ببخش";
 
 // ===== Fields of Study =====
 export const FIELDS_OF_STUDY = [
@@ -86,9 +86,9 @@ export const CONDITION_DEFECTS = [
 
 // ===== Price Indicator =====
 export const PRICE_INDICATORS = {
-  great: { label: "قیمت عالی", color: "text-success-600", bgColor: "bg-success-50", icon: "🔥" },
-  fair: { label: "قیمت منصفانه", color: "text-accent-600", bgColor: "bg-accent-50", icon: "👍" },
-  high: { label: "بالاتر از میانگین", color: "text-warning-600", bgColor: "bg-warning-50", icon: "📈" },
+  great: { label: "اهدای رایگان", color: "text-success-600", bgColor: "bg-success-50", icon: "🎁" },
+  fair: { label: "آماده اهدا", color: "text-accent-600", bgColor: "bg-accent-50", icon: "🤲" },
+  high: { label: "در انتظار هماهنگی", color: "text-warning-600", bgColor: "bg-warning-50", icon: "💬" },
 } as const;
 
 export type PriceIndicator = keyof typeof PRICE_INDICATORS;
@@ -236,10 +236,8 @@ export const SHIPPING_METHODS = [
 // ===== Sort Options =====
 export const SORT_OPTIONS = [
   { id: "newest", label: "جدیدترین" },
-  { id: "price-asc", label: "ارزان‌ترین" },
-  { id: "discount", label: "بیشترین تخفیف" },
   { id: "condition", label: "بهترین وضعیت" },
-  { id: "closest", label: "نزدیک‌ترین فروشنده" },
+  { id: "closest", label: "نزدیک‌ترین اهداکننده" },
   { id: "views", label: "پربازدیدترین" },
 ] as const;
 
@@ -260,14 +258,14 @@ export const HOW_IT_WORKS_STEPS = {
     },
     {
       step: 2,
-      title: "مقایسه و انتخاب",
-      description: "قیمت و وضعیت کتاب‌ها را مقایسه کنید و بهترین را انتخاب کنید",
+      title: "بررسی و انتخاب",
+      description: "وضعیت و محل تحویل کتاب‌ها را ببینید و مناسب‌ترین را انتخاب کنید",
       icon: "compare",
     },
     {
       step: 3,
-      title: "خرید امن",
-      description: "با خیال راحت خرید کنید. پول شما تا تأیید دریافت کتاب نزد ما محفوظ است",
+      title: "هماهنگی دریافت",
+      description: "با اهداکننده گفت‌وگو کنید و روش تحویل کتاب را هماهنگ کنید",
       icon: "secure",
     },
   ],
@@ -280,15 +278,15 @@ export const HOW_IT_WORKS_STEPS = {
     },
     {
       step: 2,
-      title: "قیمت بگذارید",
-      description: "ما قیمت پیشنهادی بر اساس بازار به شما نشان می‌دهیم",
-      icon: "price",
+      title: "روش تحویل را مشخص کنید",
+      description: "شهر و امکان ارسال پستی یا تحویل حضوری را انتخاب کنید",
+      icon: "share",
     },
     {
       step: 3,
-      title: "بفروشید",
-      description: "خریدار پیدا شد! کتاب را ارسال کنید و پولتان را دریافت کنید",
-      icon: "sell",
+      title: "ببخشید",
+      description: "گیرنده پیدا شد؛ کتاب را تحویل دهید و چرخه مطالعه را ادامه دهید",
+      icon: "give",
     },
   ],
 };
@@ -300,7 +298,7 @@ export const TESTIMONIALS = [
     name: "سارا محمدی",
     field: "تجربی",
     avatar: "",
-    text: "کل کتاب‌های کنکورم رو از کنکورباز خریدم و نزدیک ۳ میلیون تومان صرفه‌جویی کردم. کتاب‌ها همه در وضعیت عالی بودن!",
+    text: "کتاب‌های کنکورم را از کنکورباز رایگان گرفتم. همه در وضعیت خوبی بودند و بعد از کنکور دوباره اهداشان می‌کنم.",
     rating: 5,
     savedAmount: 3200000,
   },
@@ -309,7 +307,7 @@ export const TESTIMONIALS = [
     name: "علی رضایی",
     field: "ریاضی",
     avatar: "",
-    text: "بعد از کنکور، همه کتاب‌هام رو اینجا فروختم. خیلی سریع خریدار پیدا شد و پولم رو هم سریع گرفتم.",
+    text: "بعد از کنکور، همه کتاب‌هایم را اینجا اهدا کردم. خیلی سریع به دست چند دانش‌آموز دیگر رسیدند.",
     rating: 5,
     savedAmount: 0,
   },
@@ -318,7 +316,7 @@ export const TESTIMONIALS = [
     name: "مریم حسینی",
     field: "انسانی",
     avatar: "",
-    text: "قابلیت تعویض کتاب خیلی عالیه! شیمی‌ام رو با فلسفه عوض کردم بدون اینکه پولی بدم.",
+    text: "کتاب شیمی‌ام را بخشیدم و یک کتاب فلسفه اهدایی پیدا کردم. حس ادامه‌دادن این چرخه خیلی خوب است.",
     rating: 4,
     savedAmount: 450000,
   },
@@ -327,7 +325,7 @@ export const TESTIMONIALS = [
     name: "امیرحسین کریمی",
     field: "تجربی",
     avatar: "",
-    text: "پکیج کامل زیست گاج رو با ۶۰٪ تخفیف نسبت به قیمت نو خریدم. کیفیتشون هم فوق‌العاده بود.",
+    text: "پکیج کامل زیست را رایگان تحویل گرفتم. کیفیت کتاب‌ها عالی بود و قرار است بعداً به نفر بعدی برسند.",
     rating: 5,
     savedAmount: 1800000,
   },
@@ -336,7 +334,7 @@ export const TESTIMONIALS = [
 // ===== Sustainability Stats =====
 export const SUSTAINABILITY_STATS = [
   { label: "کتاب بازیافت شده", value: "۱۲,۵۰۰+", icon: "book" },
-  { label: "صرفه‌جویی دانش‌آموزان", value: "۸.۲ میلیارد تومان", icon: "money" },
+  { label: "اهدای موفق کتاب", value: "۹,۸۰۰+", icon: "gift" },
   { label: "صفحه کاغذ نجات‌یافته", value: "۳.۸ میلیون", icon: "leaf" },
   { label: "دانش‌آموز فعال", value: "۲۵,۰۰۰+", icon: "users" },
 ];

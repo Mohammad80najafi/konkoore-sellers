@@ -23,7 +23,7 @@ export default function NotFound() {
             href="/marketplace"
             className="px-5 py-2.5 border border-navy-200 text-navy-700 text-sm font-semibold rounded-xl hover:bg-navy-50 transition-colors"
           >
-            بازار کتاب
+            کتاب‌های اهدایی
           </Link>
         </div>
       </div>

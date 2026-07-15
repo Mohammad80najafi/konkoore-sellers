@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, formatPrice, toPersianDigits } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   FIELDS_OF_STUDY,
   GRADES,
@@ -32,8 +32,6 @@ export default function FilterSidebar({
     filters.grade,
     filters.subject,
     filters.condition,
-    filters.minPrice,
-    filters.maxPrice,
     filters.province,
     filters.shippingAvailable,
     filters.pickupAvailable,
@@ -181,51 +179,6 @@ export default function FilterSidebar({
               />
               <span className="text-sm flex-1">{cond.label}</span>
             </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Price Range */}
-      <div>
-        <h3 className="text-xs font-bold text-surface-500 mb-3">محدوده قیمت</h3>
-        <div className="flex items-center gap-2 mb-3">
-          <input
-            type="number"
-            placeholder="از"
-            value={filters.minPrice ?? ""}
-            onChange={(e) =>
-              onFilterChange("minPrice", e.target.value ? Number(e.target.value) : undefined)
-            }
-            className="min-w-0 flex-1 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-800 placeholder:text-surface-400 focus:border-navy-500 focus:ring-1 focus:ring-navy-500/20 focus:outline-none"
-          />
-          <span className="text-surface-400 shrink-0">—</span>
-          <input
-            type="number"
-            placeholder="تا"
-            value={filters.maxPrice ?? ""}
-            onChange={(e) =>
-              onFilterChange("maxPrice", e.target.value ? Number(e.target.value) : undefined)
-            }
-            className="min-w-0 flex-1 rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-800 placeholder:text-surface-400 focus:border-navy-500 focus:ring-1 focus:ring-navy-500/20 focus:outline-none"
-          />
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {[
-            { label: `زیر ${toPersianDigits(200000)}`, min: 0, max: 200000 },
-            { label: `${toPersianDigits(200000)} – ${toPersianDigits(500000)}`, min: 200000, max: 500000 },
-            { label: `${toPersianDigits(500000)} – ${toPersianDigits(1000000)}`, min: 500000, max: 1000000 },
-            { label: `بالای ${toPersianDigits(1000000)}`, min: 1000000, max: undefined },
-          ].map((preset) => (
-            <button
-              key={preset.label}
-              onClick={() => {
-                onFilterChange("minPrice", preset.min);
-                onFilterChange("maxPrice", preset.max);
-              }}
-              className="px-2.5 py-1 text-[11px] font-medium rounded-md bg-surface-50 text-surface-600 border border-surface-200 hover:border-navy-300 transition-colors cursor-pointer"
-            >
-              {preset.label}
-            </button>
           ))}
         </div>
       </div>

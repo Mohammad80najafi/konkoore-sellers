@@ -34,9 +34,9 @@ const steps = [
   },
   {
     id: 3,
-    label: "قیمت و تحویل",
-    shortLabel: "قیمت",
-    description: "قیمت‌گذاری و روش دریافت",
+    label: "موقعیت و تحویل",
+    shortLabel: "تحویل",
+    description: "شهر و روش دریافت کتاب",
   },
   {
     id: 4,
@@ -61,8 +61,6 @@ export default function CreateListingForm() {
   const [condition, setCondition] = useState("");
   const [year, setYear] = useState("1405");
   const [edition, setEdition] = useState("");
-  const [originalPrice, setOriginalPrice] = useState("");
-  const [price, setPrice] = useState("");
   const [province, setProvince] = useState("");
   const [city, setCity] = useState("");
   const [shippingAvailable, setShippingAvailable] = useState(true);
@@ -85,12 +83,6 @@ export default function CreateListingForm() {
   const selectedCondition = BOOK_CONDITIONS.find((item) => item.id === condition);
   const activeStep = steps[currentStep - 1];
   const progress = (currentStep / steps.length) * 100;
-  const hasPrice = Number(price) > 0;
-  const hasOriginalPrice = Number(originalPrice) > 0;
-  const discount =
-    hasPrice && hasOriginalPrice
-      ? Math.round(((Number(originalPrice) - Number(price)) / Number(originalPrice)) * 100)
-      : 0;
 
   const canProceed = () => {
     switch (currentStep) {
@@ -106,7 +98,7 @@ export default function CreateListingForm() {
       case 2:
         return Boolean(condition && year);
       case 3:
-        return Boolean(price && originalPrice && province && city);
+        return Boolean(province && city && (shippingAvailable || pickupAvailable));
       case 4:
         return true;
     }
@@ -152,8 +144,6 @@ export default function CreateListingForm() {
       field,
       grade,
       subject,
-      originalPrice: Number(originalPrice),
-      price: Number(price),
       condition,
       year: Number(year),
       edition: edition ? Number(edition) : undefined,
@@ -470,7 +460,7 @@ export default function CreateListingForm() {
               </div>
 
               <div>
-                <FormLabel title="جزئیات وضعیت" hint="این بخش اعتماد خریدار را بیشتر می‌کند؛ دقیق انتخاب کنید" />
+                <FormLabel title="جزئیات وضعیت" hint="این بخش اعتماد گیرنده را بیشتر می‌کند؛ دقیق انتخاب کنید" />
                 <div className="grid gap-2.5 sm:grid-cols-2">
                   {[
                     { label: "هایلایت شده", value: highlighting, setter: setHighlighting },
@@ -508,60 +498,10 @@ export default function CreateListingForm() {
           {currentStep === 3 && (
             <div className="space-y-8">
               <div className="rounded-3xl bg-navy-800 p-5 text-white sm:p-6">
-                <div className="mb-5 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-black">قیمت‌گذاری منصفانه</p>
-                    <p className="mt-1 text-xs leading-5 text-white/60">قیمت مناسب، شانس فروش سریع‌تر را بیشتر می‌کند.</p>
-                  </div>
-                  <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/80">تومان</span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Input
-                    label="قیمت کتاب نو"
-                    type="number"
-                    placeholder="۵۰۰٬۰۰۰"
-                    value={originalPrice}
-                    onChange={(event) => setOriginalPrice(event.target.value)}
-                    className="h-12 rounded-2xl border-white/10 bg-white/95"
-                  />
-                  <Input
-                    label="قیمت پیشنهادی شما"
-                    type="number"
-                    placeholder="۲۵۰٬۰۰۰"
-                    value={price}
-                    onChange={(event) => setPrice(event.target.value)}
-                    className="h-12 rounded-2xl border-white/10 bg-white/95"
-                  />
-                </div>
-                {(hasPrice || hasOriginalPrice) && (
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                    {hasOriginalPrice && (
-                      <span className="rounded-full bg-white/10 px-3 py-1.5">نو: {Number(originalPrice).toLocaleString("fa-IR")} تومان</span>
-                    )}
-                    {hasPrice && (
-                      <span className="rounded-full bg-accent-500 px-3 py-1.5 font-bold">فروش: {Number(price).toLocaleString("fa-IR")} تومان</span>
-                    )}
-                  </div>
-                )}
+                <span className="text-xs font-bold text-accent-300">بخون و ببخش</span>
+                <h2 className="mt-2 text-xl font-black">این کتاب رایگان اهدا می‌شود</h2>
+                <p className="mt-2 text-sm leading-7 text-white/65">فقط شهر و روش تحویل را مشخص کن تا دانش‌آموز بعدی بتواند برای دریافت کتاب با تو هماهنگ شود.</p>
               </div>
-
-              {hasOriginalPrice && hasPrice && (
-                <div
-                  className={cn(
-                    "flex items-center justify-between gap-4 rounded-2xl border p-4 text-sm",
-                    discount > 0
-                      ? "border-success-100 bg-success-50 text-success-800"
-                      : "border-danger-100 bg-danger-50 text-danger-700"
-                  )}
-                >
-                  <span className="font-bold">
-                    {discount > 0
-                      ? `${toPersianDigits(discount)}٪ ارزان‌تر از نسخه نو`
-                      : "قیمت فروش باید کمتر از قیمت کتاب نو باشد"}
-                  </span>
-                  {discount > 0 && <span className="text-xl">↘</span>}
-                </div>
-              )}
 
               <div>
                 <FormLabel title="موقعیت کتاب" hint="برای محاسبه فاصله و هماهنگی تحویل" />
@@ -638,11 +578,11 @@ export default function CreateListingForm() {
                   rows={6}
                   className="w-full resize-none rounded-2xl border border-surface-200 bg-white px-4 py-3 text-sm leading-7 text-surface-800 outline-none transition placeholder:text-surface-400 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
                 />
-                <p className="mt-2 text-xs leading-5 text-surface-500">جزئیاتی را بنویسید که در عکس‌ها مشخص نیست؛ صداقت، فروش را سریع‌تر می‌کند.</p>
+                <p className="mt-2 text-xs leading-5 text-surface-500">جزئیاتی را بنویسید که در عکس‌ها مشخص نیست؛ توضیح دقیق، هماهنگی اهدا را ساده‌تر می‌کند.</p>
               </div>
 
               <div>
-                <FormLabel title="پیش‌نمایش آگهی" hint="خریدار اطلاعات اصلی را تقریباً به این شکل می‌بیند" />
+                <FormLabel title="پیش‌نمایش آگهی" hint="گیرنده اطلاعات اصلی را تقریباً به این شکل می‌بیند" />
                 <div className="overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-[0_16px_45px_-30px_rgba(15,23,42,0.45)] sm:flex">
                   <div className="relative aspect-[16/10] bg-[linear-gradient(135deg,#f8fafc,#eef2ff)] sm:aspect-auto sm:w-52 sm:shrink-0">
                     {images[0] ? (
@@ -666,10 +606,7 @@ export default function CreateListingForm() {
                       <p className="mt-1 text-sm text-surface-500">{author || "نام نویسنده"}</p>
                     </div>
                     <div className="mt-6 flex items-end justify-between gap-4 border-t border-surface-100 pt-4">
-                      <div>
-                        <span className="block text-xs text-surface-400">قیمت فروش</span>
-                        <strong className="mt-1 block text-lg font-black text-navy-800">{hasPrice ? Number(price).toLocaleString("fa-IR") : "—"} <small className="text-xs">تومان</small></strong>
-                      </div>
+                      <strong className="rounded-full bg-success-50 px-3 py-1.5 text-sm font-black text-success-700">اهدای رایگان</strong>
                       <span className="text-xs text-surface-500">{city || "شهر"}، {province || "استان"}</span>
                     </div>
                   </div>
@@ -709,7 +646,7 @@ export default function CreateListingForm() {
               disabled={!canProceed()}
               className="min-w-36"
             >
-              انتشار آگهی
+              انتشار برای اهدا
             </Button>
           )}
         </footer>
@@ -781,14 +718,14 @@ export default function CreateListingForm() {
             </div>
           </div>
           <div className="p-5">
-            <span className="block text-[10px] text-white/45">قیمت پیشنهادی</span>
-            <strong className="mt-1 block text-lg font-black text-accent-300">{hasPrice ? Number(price).toLocaleString("fa-IR") : "—"} <small className="text-[10px] text-white/50">تومان</small></strong>
+            <span className="block text-[10px] text-white/45">نوع آگهی</span>
+            <strong className="mt-1 block text-lg font-black text-accent-300">اهدای رایگان</strong>
           </div>
         </div>
 
         <div className="mt-4 hidden items-start gap-3 rounded-2xl border border-accent-100 bg-accent-50/70 p-4 lg:flex">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent-100 text-sm">✦</span>
-          <p className="text-xs leading-5 text-accent-900">آگهی‌های دارای عکس واضح و قیمت منصفانه، معمولاً زودتر پیام می‌گیرند.</p>
+          <p className="text-xs leading-5 text-accent-900">عکس واضح و توضیح دقیق کمک می‌کند کتاب سریع‌تر به دست دانش‌آموز بعدی برسد.</p>
         </div>
       </aside>
     </div>

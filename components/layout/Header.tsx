@@ -10,7 +10,7 @@ import { logoutAction } from "@/lib/auth-actions";
 import { connectSocket } from "@/lib/socket-client";
 
 const navLinks = [
-  { href: "/marketplace", label: "بازار کتاب" },
+  { href: "/marketplace", label: "کتاب‌های اهدایی" },
   { href: "/messages", label: "پیام‌ها" },
   { href: "/about", label: "درباره ما" },
 ];
@@ -155,7 +155,7 @@ export default function Header({
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                فروش کتاب
+                اهدای کتاب
             </Link>
 
             {currentUser ? (

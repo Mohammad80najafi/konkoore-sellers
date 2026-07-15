@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { calculateDiscount, formatPrice, toPersianDigits } from "@/lib/utils";
+import { toPersianDigits } from "@/lib/utils";
 import type { Listing } from "@/lib/types";
 
 interface BundleDealsProps {
@@ -15,8 +15,8 @@ export default function BundleDeals({ bundles }: BundleDealsProps) {
         <div className="mb-8 flex items-end justify-between gap-4">
           <div className="max-w-xl">
             <span className="text-xs font-bold text-accent-400">یک انتخاب، چند کتاب</span>
-            <h2 className="mt-2 text-2xl font-black tracking-tight md:text-3xl">پکیج‌های به‌صرفه کنکور</h2>
-            <p className="mt-2 text-sm leading-7 text-navy-200">چند کتاب هماهنگ را یک‌جا بخر و هزینه کمتری بپرداز.</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight md:text-3xl">پکیج‌های اهدایی کنکور</h2>
+            <p className="mt-2 text-sm leading-7 text-navy-200">چند کتاب هماهنگ را یک‌جا تحویل بگیر و مسیر مطالعه‌ات را کامل‌تر کن.</p>
           </div>
           <Link
             href="/marketplace?type=bundle"
@@ -30,7 +30,6 @@ export default function BundleDeals({ bundles }: BundleDealsProps) {
 
         <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
           {bundles.map((bundle) => {
-            const discount = calculateDiscount(bundle.originalPrice, bundle.price);
             return (
               <Link
                 key={bundle._id}
@@ -53,11 +52,7 @@ export default function BundleDeals({ bundles }: BundleDealsProps) {
                       <h3 className="line-clamp-2 text-base font-black leading-7 text-navy-800">
                         {bundle.description?.split(".")[0] || bundle.book.title}
                       </h3>
-                      {discount > 0 ? (
-                        <span className="shrink-0 rounded-full bg-danger-50 px-2.5 py-1 text-[10px] font-black text-danger-600">
-                          {toPersianDigits(discount)}٪ کمتر
-                        </span>
-                      ) : null}
+                      <span className="shrink-0 rounded-full bg-success-50 px-2.5 py-1 text-[10px] font-black text-success-700">اهدای رایگان</span>
                     </div>
 
                     {bundle.bundleBooks ? (
@@ -73,10 +68,7 @@ export default function BundleDeals({ bundles }: BundleDealsProps) {
                     ) : null}
 
                     <div className="mt-auto flex items-end justify-between gap-4 border-t border-surface-100 pt-4">
-                      <div>
-                        <span className="block text-[10px] text-surface-400">قیمت کل پکیج</span>
-                        <span className="mt-0.5 block text-lg font-black text-navy-800">{formatPrice(bundle.price)}</span>
-                      </div>
+                      <span className="text-sm font-black text-success-700">برای اهدا</span>
                       <span className="text-xs text-surface-400">{bundle.seller.city}</span>
                     </div>
                   </div>

@@ -2,7 +2,7 @@ import { SUSTAINABILITY_STATS } from "@/lib/constants";
 
 const iconMap: Record<string, string> = {
   book: "📚",
-  money: "💰",
+  gift: "🎁",
   leaf: "🌿",
   users: "👥",
 };
@@ -16,8 +16,8 @@ export default function SustainabilitySection() {
             <div>
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-success-500 text-2xl text-white">🌱</span>
               <span className="mt-5 block text-xs font-bold text-success-700">هر کتاب، یک دور بیشتر</span>
-              <h2 className="mt-2 text-2xl font-black leading-tight text-navy-800 md:text-3xl">خرید دست دوم، انتخابی که اثر می‌گذارد</h2>
-              <p className="mt-4 text-sm leading-8 text-surface-600">با هر کتابی که دوباره خوانده می‌شود، هم هزینه یک دانش‌آموز کمتر می‌شود و هم کاغذ و انرژی کمتری مصرف می‌کنیم.</p>
+              <h2 className="mt-2 text-2xl font-black leading-tight text-navy-800 md:text-3xl">بخشیدن یک کتاب، شروع یک مسیر تازه</h2>
+              <p className="mt-4 text-sm leading-8 text-surface-600">با هر کتابی که دوباره خوانده می‌شود، یک دانش‌آموز بدون هزینه به منبع آموزشی می‌رسد و کاغذ و انرژی کمتری مصرف می‌شود.</p>
               <div className="mt-6 h-1 w-20 rounded-full bg-success-400" aria-hidden="true" />
             </div>
 

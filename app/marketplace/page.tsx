@@ -4,9 +4,9 @@ import { getAllListings } from "@/lib/data";
 import type { Listing } from "@/lib/types";
 
 export const metadata = {
-  title: "بازار کتاب",
+  title: "کتاب‌های اهدایی",
   description:
-    "بازار خرید و فروش کتاب‌های دست دوم کنکور — کتاب‌های تجربی، ریاضی، انسانی، هنر و زبان را ارزان‌تر بخرید یا بفروشید.",
+    "کتاب‌های دست دوم کنکور را رایگان دریافت کنید یا کتاب‌های خود را به دانش‌آموز بعدی ببخشید.",
 };
 
 export default async function MarketplaceRoute() {

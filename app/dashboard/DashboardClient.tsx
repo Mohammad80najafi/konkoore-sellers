@@ -9,7 +9,7 @@ import Input from "@/components/ui/Input";
 import { updateListingStatusAction, updateProfileAction } from "@/lib/auth-actions";
 import { PROVINCES } from "@/lib/constants";
 import type { SellerListing, User } from "@/lib/types";
-import { cn, formatPrice, toJalali, toPersianDigits } from "@/lib/utils";
+import { cn, toJalali, toPersianDigits } from "@/lib/utils";
 
 interface DashboardClientProps {
   currentUser: User;
@@ -28,7 +28,7 @@ const conditionLabels: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   active: "فعال",
-  sold: "فروخته‌شده",
+  sold: "اهداشده",
   reserved: "رزرو شده",
   expired: "منقضی‌شده",
   pending: "در انتظار بررسی",
@@ -59,7 +59,7 @@ export default function DashboardClient({
   );
   const cities = selectedProvinceData?.cities || [];
   const activeListings = listings.filter((listing) => listing.status === "active").length;
-  const soldListings = listings.filter((listing) => listing.status === "sold").length;
+  const donatedListings = listings.filter((listing) => listing.status === "sold").length;
   const totalViews = listings.reduce((sum, listing) => sum + listing.views, 0);
   const totalFavorites = listings.reduce((sum, listing) => sum + listing.favorites, 0);
   const initials = currentUser.name
@@ -106,7 +106,7 @@ export default function DashboardClient({
     }
   };
 
-  const handleMarkAsSold = async (listingId: string) => {
+  const handleMarkAsDonated = async (listingId: string) => {
     setActionLoadingId(listingId);
     const result = await updateListingStatusAction(listingId, "sold");
     setActionLoadingId(null);
@@ -130,13 +130,13 @@ export default function DashboardClient({
           <div>
             <div className="mb-2 flex items-center gap-2 text-xs font-bold text-accent-600">
               <span className="h-px w-7 bg-accent-400" />
-              میز کار فروشنده
+              میز کار اهداکننده
             </div>
             <h1 className="text-3xl font-black tracking-tight text-navy-900 sm:text-4xl">
               سلام {currentUser.name.split(" ")[0]}، اینجا همه‌چیز مرتب است
             </h1>
             <p className="mt-2 text-sm leading-7 text-surface-500">
-              آگهی‌ها، بازخورد خریداران و اطلاعات حسابت را از یک‌جا مدیریت کن.
+              آگهی‌ها، درخواست‌های دریافت و اطلاعات حسابت را از یک‌جا مدیریت کن.
             </p>
           </div>
 
@@ -155,7 +155,7 @@ export default function DashboardClient({
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/45">
-                    نبض فروشگاه تو
+                    اثر مهربانی تو
                   </p>
                   <p className="mt-1 text-sm font-black">عملکرد همه آگهی‌ها</p>
                 </div>
@@ -167,7 +167,7 @@ export default function DashboardClient({
 
               <div className="grid grid-cols-2 divide-x divide-x-reverse divide-y divide-white/10 sm:grid-cols-4 sm:divide-y-0">
                 <Metric label="آگهی فعال" value={activeListings} suffix="آگهی" accent />
-                <Metric label="فروخته‌شده" value={soldListings} suffix="کتاب" />
+                <Metric label="اهداشده" value={donatedListings} suffix="کتاب" />
                 <Metric label="مجموع بازدید" value={totalViews} suffix="بازدید" />
                 <Metric label="علاقه‌مندی‌ها" value={totalFavorites} suffix="نفر" />
               </div>
@@ -181,7 +181,7 @@ export default function DashboardClient({
                   </h2>
                   <p className="mt-1 text-xs leading-5 text-surface-500">
                     {activeTab === "listings"
-                      ? "وضعیت فروش و بازخورد هر کتاب را دنبال کن."
+                      ? "وضعیت اهدا و بازخورد هر کتاب را دنبال کن."
                       : "نام و موقعیت نمایش‌داده‌شده در آگهی‌ها را ویرایش کن."}
                   </p>
                 </div>
@@ -226,8 +226,8 @@ export default function DashboardClient({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5.5A1.5 1.5 0 015.5 4H18v16H5.5A1.5 1.5 0 014 18.5v-13zM8 4v16" />
                       </svg>
                     </span>
-                    <h3 className="mt-5 text-lg font-black text-navy-900">اولین کتابت منتظر یک خریدار است</h3>
-                    <p className="mt-2 max-w-sm text-sm leading-6 text-surface-500">از کتاب چند عکس بگیر، قیمت را وارد کن و اولین آگهی را بساز.</p>
+                    <h3 className="mt-5 text-lg font-black text-navy-900">اولین کتابت منتظر یک دانش‌آموز است</h3>
+                    <p className="mt-2 max-w-sm text-sm leading-6 text-surface-500">از کتاب چند عکس بگیر، روش تحویل را مشخص کن و اولین اهدایت را ثبت کن.</p>
                     <Link href="/create-listing" className="mt-6 rounded-xl border-2 border-navy-200 px-4 py-2.5 text-sm font-black text-navy-700 transition hover:bg-navy-50">ثبت اولین آگهی</Link>
                   </div>
                 ) : (
@@ -278,10 +278,7 @@ export default function DashboardClient({
                                   {listing.book.publisher.name} · {listing.book.author}
                                 </p>
                               </div>
-                              <div className="shrink-0 sm:text-left">
-                                <span className="block text-[10px] text-surface-400">قیمت فروش</span>
-                                <strong className="mt-0.5 block text-sm font-black text-navy-800 sm:text-base">{formatPrice(listing.price)}</strong>
-                              </div>
+                              <span className="shrink-0 rounded-full bg-success-50 px-3 py-1 text-xs font-black text-success-700">اهدای رایگان</span>
                             </div>
 
                             <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-surface-500">
@@ -302,11 +299,11 @@ export default function DashboardClient({
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleMarkAsSold(listing._id)}
+                                  onClick={() => handleMarkAsDonated(listing._id)}
                                   isLoading={actionLoadingId === listing._id}
                                   className="mr-auto px-2.5 py-1.5 text-xs text-surface-500 hover:text-success-700"
                                 >
-                                  ثبت به‌عنوان فروخته‌شده
+                                  ثبت به‌عنوان اهداشده
                                 </Button>
                               ) : null}
                             </div>
@@ -399,7 +396,7 @@ export default function DashboardClient({
                     <div className="flex items-center gap-2">
                       <h2 className="truncate text-lg font-black">{currentUser.name}</h2>
                       {currentUser.isVerified ? (
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-400 text-[10px] font-black text-navy-900" title="فروشنده تأییدشده">✓</span>
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-400 text-[10px] font-black text-navy-900" title="اهداکننده تأییدشده">✓</span>
                       ) : null}
                     </div>
                     <p className="mt-1 font-mono text-xs text-white/55" dir="ltr">{currentUser.phone}</p>
@@ -409,8 +406,8 @@ export default function DashboardClient({
 
               <div className="grid grid-cols-3 divide-x divide-x-reverse divide-surface-100 border-b border-surface-100">
                 <ProfileMetric label="امتیاز" value={toPersianDigits(currentUser.rating.toFixed(1))} />
-                <ProfileMetric label="فروش" value={toPersianDigits(currentUser.totalSales)} />
-                <ProfileMetric label="خرید" value={toPersianDigits(currentUser.totalPurchases)} />
+                <ProfileMetric label="اهدا" value={toPersianDigits(currentUser.totalSales)} />
+                <ProfileMetric label="دریافت" value={toPersianDigits(currentUser.totalPurchases)} />
               </div>
 
               <div className="space-y-3 p-5 text-xs text-surface-500">
@@ -431,7 +428,7 @@ export default function DashboardClient({
                 <span className="text-surface-300">←</span>
               </Link>
               <Link href="/marketplace" className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-bold text-surface-600 transition hover:bg-surface-50 hover:text-navy-800">
-                مشاهده بازار
+                مشاهده کتاب‌های اهدایی
                 <span className="text-surface-300">←</span>
               </Link>
             </nav>

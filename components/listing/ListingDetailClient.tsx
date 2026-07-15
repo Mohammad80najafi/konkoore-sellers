@@ -26,7 +26,7 @@ const gradeLabels: Record<string, string> = {
 
 export default function ListingDetailClient({ listing }: { listing: Listing }) {
   const router = useRouter();
-  const { book, price, originalPrice, condition, seller, city, province, isBundle, bundleBooks, description, year, edition, shippingAvailable, pickupAvailable, images } = listing;
+  const { book, condition, seller, city, province, isBundle, bundleBooks, description, year, edition, shippingAvailable, pickupAvailable, images } = listing;
 
   const validImages = images?.filter((img) => img.url && img.url.trim() !== "") || [];
   const [selectedImage, setSelectedImage] = useState(0);
@@ -90,10 +90,6 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
     return () => window.removeEventListener("keydown", handler);
   }, [lightboxOpen, goNext, goPrev]);
 
-  const discount = originalPrice > price
-    ? Math.round(((originalPrice - price) / originalPrice) * 100)
-    : 0;
-
   const conditionInfo = BOOK_CONDITIONS.find((c) => c.id === condition.grade);
 
   return (
@@ -102,7 +98,7 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
       <nav className="mb-4 text-sm text-surface-500" aria-label="breadcrumb">
         <Link href="/" className="hover:text-navy-600 transition-colors">خانه</Link>
         <span className="mx-2 text-surface-300">/</span>
-        <Link href="/marketplace" className="hover:text-navy-600 transition-colors">بازار کتاب</Link>
+        <Link href="/marketplace" className="hover:text-navy-600 transition-colors">کتاب‌های اهدایی</Link>
         <span className="mx-2 text-surface-300">/</span>
         <span className="text-navy-700 font-medium line-clamp-1">{book.title}</span>
       </nav>
@@ -217,7 +213,7 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
           {/* Description */}
           {description && (
             <div className="bg-white rounded-2xl border border-surface-200 p-5">
-              <h2 className="text-sm font-bold text-navy-800 mb-3">توضیحات فروشنده</h2>
+              <h2 className="text-sm font-bold text-navy-800 mb-3">توضیحات اهداکننده</h2>
               <p className="text-sm text-surface-600 leading-relaxed whitespace-pre-line">{description}</p>
             </div>
           )}
@@ -225,19 +221,11 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
 
         {/* Sidebar — 2 cols */}
         <div className="md:col-span-2 space-y-4">
-          {/* Price card */}
+          {/* Donation card */}
           <div className="bg-white rounded-2xl border border-surface-200 p-5 sticky top-24">
-            <div className="mb-4">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-navy-800">{toPersianDigits(price.toLocaleString("fa-IR"))}</span>
-                <span className="text-sm text-surface-500">تومان</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-surface-400 line-through">{toPersianDigits(originalPrice.toLocaleString("fa-IR"))}</span>
-                  <span className="text-xs font-bold text-success-600 bg-success-50 px-2 py-0.5 rounded-md">{toPersianDigits(discount)}٪ تخفیف</span>
-                </div>
-              )}
+            <div className="mb-4 rounded-xl bg-success-50 p-4">
+              <span className="text-xs font-bold text-success-700">بخون و ببخش</span>
+              <strong className="mt-1 block text-xl font-black text-navy-800">این کتاب رایگان اهدا می‌شود</strong>
             </div>
 
             {/* Year & Edition */}
@@ -279,7 +267,7 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
               {city}، {province}
             </div>
 
-            {/* Seller */}
+            {/* Donor */}
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-navy-100 flex items-center justify-center shrink-0">
                 <span className="text-sm font-bold text-navy-700">
@@ -297,12 +285,12 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
                       {seller.rating}
                     </span>
                   )}
-                  <span>{seller.totalSales} فروش</span>
+                  <span>{seller.totalSales} اهدای موفق</span>
                 </div>
               </div>
             </div>
 
-            {/* Message seller button */}
+            {/* Message donor button */}
             <button
               onClick={async () => {
                 setMessageLoading(true);
@@ -315,7 +303,7 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
               disabled={messageLoading}
               className="w-full py-2.5 bg-navy-600 text-white text-sm font-semibold rounded-xl hover:bg-navy-700 transition-colors cursor-pointer disabled:opacity-50"
             >
-              {messageLoading ? "..." : "پیام به فروشنده"}
+              {messageLoading ? "..." : "پیام به اهداکننده"}
             </button>
           </div>
         </div>
@@ -327,7 +315,7 @@ export default function ListingDetailClient({ listing }: { listing: Listing }) {
           <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-          بازگشت به بازار کتاب
+          بازگشت به کتاب‌های اهدایی
         </Link>
       </div>
 

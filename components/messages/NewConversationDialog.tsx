@@ -83,7 +83,7 @@ export default function NewConversationDialog({
                 گفت‌وگوی تازه
               </h2>
               <p className="mt-0.5 text-xs text-surface-500">
-                هم‌کلاسی یا فروشنده موردنظرتان را پیدا کنید.
+                هم‌کلاسی یا اهداکننده موردنظرتان را پیدا کنید.
               </p>
             </div>
             <button

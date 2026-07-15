@@ -6,8 +6,8 @@ const stepIcons: Record<string, string> = {
   compare: "⚖️",
   secure: "🛡️",
   camera: "📸",
-  price: "💰",
-  sell: "🎉",
+  share: "🤲",
+  give: "🎁",
 };
 
 export default function HowItWorks() {
@@ -16,15 +16,15 @@ export default function HowItWorks() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="mb-9 max-w-2xl">
           <span className="text-xs font-bold text-accent-600">از انتخاب تا تحویل</span>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-navy-800 md:text-3xl">دو مسیر ساده، یک بازار مطمئن</h2>
-          <p className="mt-2 text-sm leading-7 text-surface-500">چه خریدار باشی چه فروشنده، از شروع تا پایان فقط سه قدم فاصله داری.</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-navy-800 md:text-3xl">دو مسیر ساده، یک چرخه مهربان</h2>
+          <p className="mt-2 text-sm leading-7 text-surface-500">چه کتاب بخواهی چه کتابی برای بخشیدن داشته باشی، فقط سه قدم فاصله داری.</p>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="rounded-[28px] border border-navy-100 bg-navy-50/55 p-5 md:p-7">
             <div className="mb-6 flex items-center justify-between gap-3">
               <div>
-                <span className="text-[10px] font-bold text-navy-400">مسیر خریدار</span>
+                <span className="text-[10px] font-bold text-navy-400">مسیر گیرنده</span>
                 <h3 className="mt-1 text-xl font-black text-navy-800">کتاب مناسب را پیدا کن</h3>
               </div>
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-navy-700 text-xl text-white">🛒</span>
@@ -46,17 +46,17 @@ export default function HowItWorks() {
             </ol>
 
             <Link href="/marketplace" className="mt-5 flex h-11 items-center justify-center rounded-xl bg-navy-700 text-sm font-bold text-white transition hover:bg-navy-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 focus-visible:ring-offset-2">
-              شروع خرید
+              پیدا کردن کتاب
             </Link>
           </div>
 
           <div className="rounded-[28px] border border-accent-100 bg-accent-50/55 p-5 md:p-7">
             <div className="mb-6 flex items-center justify-between gap-3">
               <div>
-                <span className="text-[10px] font-bold text-accent-600">مسیر فروشنده</span>
+                <span className="text-[10px] font-bold text-accent-600">مسیر اهداکننده</span>
                 <h3 className="mt-1 text-xl font-black text-navy-800">کتاب‌هایت را دوباره به گردش بینداز</h3>
               </div>
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-500 text-xl text-white">💰</span>
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-500 text-xl text-white">🎁</span>
             </div>
 
             <ol className="space-y-3">
@@ -75,7 +75,7 @@ export default function HowItWorks() {
             </ol>
 
             <Link href="/create-listing" className="mt-5 flex h-11 items-center justify-center rounded-xl bg-accent-500 text-sm font-bold text-white transition hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2">
-              ثبت آگهی رایگان
+              اهدای کتاب
             </Link>
           </div>
         </div>

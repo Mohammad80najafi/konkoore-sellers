@@ -38,14 +38,12 @@ export default function HeroSection() {
         <div className="text-center max-w-3xl mx-auto">
           {/* Main headline */}
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-black leading-tight mb-6 animate-fade-in text-balance">
-            کتابهای کنکورت رو <span className="text-accent-400">ارزونتر</span>{" "}
-            بخر، <span className="text-accent-400">راحتتر</span> بفروش
+            <span className="text-accent-400">بخون</span> و <span className="text-accent-400">ببخش</span>
           </h1>
 
           <p className="text-base md:text-lg text-navy-200 mb-8 max-w-2xl mx-auto animate-slide-up leading-relaxed">
-            هزاران کتاب کنکور دست دوم با قیمت مناسب. کتاب‌های تجربی، ریاضی،
-            انسانی، هنر و زبان رو پیدا کن یا کتاب‌هایی که دیگه نیاز نداری رو
-            بفروش.
+            کتاب‌های کنکور دست دوم را رایگان پیدا کن؛ یا کتاب‌هایی را که دیگر
+            نیاز نداری اهدا کن تا مسیر یک دانش‌آموز دیگر ساده‌تر شود.
           </p>
 
           {/* Search bar */}
@@ -112,7 +110,7 @@ export default function HeroSection() {
                     />
                   </svg>
                 }>
-                خرید کتاب
+                دریافت کتاب
               </Button>
             </Link>
             <Link href="/create-listing">
@@ -135,7 +133,7 @@ export default function HeroSection() {
                     />
                   </svg>
                 }>
-                فروش کتاب
+                اهدای کتاب
               </Button>
             </Link>
           </div>
@@ -155,8 +153,8 @@ export default function HeroSection() {
             </div>
             <div className="w-px h-8 bg-white/20" aria-hidden="true" />
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent-400">۶۰٪</div>
-              <div>میانگین تخفیف</div>
+              <div className="text-2xl font-bold text-accent-400">۱۰۰٪</div>
+              <div>اهدای رایگان</div>
             </div>
           </div>
         </div>

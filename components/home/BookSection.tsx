@@ -1,6 +1,5 @@
 import Link from "next/link";
 import ConditionBadge from "@/components/ui/ConditionBadge";
-import { calculateDiscount, formatPrice, toPersianDigits } from "@/lib/utils";
 import type { Listing } from "@/lib/types";
 
 const fieldLabels: Record<string, string> = {
@@ -16,9 +15,8 @@ interface BookCardProps {
 }
 
 export function BookCard({ listing }: BookCardProps) {
-  const { book, price, originalPrice, condition, seller, city, isBundle } = listing;
+  const { book, condition, seller, city, isBundle } = listing;
   const coverImage = listing.images?.find((image) => image.url?.trim())?.url;
-  const discount = originalPrice > price ? calculateDiscount(originalPrice, price) : 0;
 
   return (
     <Link
@@ -46,18 +44,10 @@ export function BookCard({ listing }: BookCardProps) {
                 پکیج
               </span>
             )}
-            {listing.priceIndicator === "great" && (
-              <span className="rounded-lg bg-success-50/95 px-2 py-1 text-[10px] font-bold text-success-700 shadow-sm">
-                قیمت عالی
-              </span>
-            )}
+            <span className="rounded-lg bg-accent-50/95 px-2 py-1 text-[10px] font-bold text-accent-700 shadow-sm">بخون و ببخش</span>
           </div>
 
-          {discount > 0 && (
-            <span className="absolute left-2 top-2 rounded-lg bg-danger-500 px-2 py-1 text-[10px] font-black text-white shadow-sm sm:left-3 sm:top-3 sm:px-2.5 sm:text-[11px]">
-              {toPersianDigits(discount)}٪ تخفیف
-            </span>
-          )}
+          <span className="absolute left-2 top-2 rounded-lg bg-success-600 px-2 py-1 text-[10px] font-black text-white shadow-sm sm:left-3 sm:top-3 sm:px-2.5 sm:text-[11px]">اهدای رایگان</span>
         </div>
 
         <div className="flex flex-1 flex-col p-3 sm:p-4">
@@ -73,19 +63,7 @@ export function BookCard({ listing }: BookCardProps) {
             <ConditionBadge condition={condition.grade} size="sm" className="text-[11px]" />
           </div>
 
-          <div className="mt-4 border-t border-surface-100 pt-3.5">
-            <span className="block text-[10px] font-medium text-surface-400">قیمت فروش</span>
-            <span className="mt-0.5 block whitespace-nowrap text-base font-black tracking-tight text-navy-800 sm:text-lg">
-              {formatPrice(price)}
-            </span>
-            {discount > 0 ? (
-              <span className="mt-0.5 block text-[10px] text-surface-400 line-through">
-                {formatPrice(originalPrice)}
-              </span>
-            ) : null}
-          </div>
-
-          <div className="mt-auto flex items-center justify-between gap-3 border-t border-surface-100 pt-3">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-surface-100 pt-3">
             <div className="flex min-w-0 items-center gap-2">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-navy-50 text-[10px] font-black text-navy-600">
                 {seller.name?.[0] || "ک"}
