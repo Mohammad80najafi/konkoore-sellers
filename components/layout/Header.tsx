@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Logo from "./Logo";
-import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { User } from "@/lib/types";
 import { logoutAction } from "@/lib/auth-actions";
@@ -21,9 +20,10 @@ interface HeaderProps {
 
 export default function Header({ currentUser }: HeaderProps) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMessages = pathname.startsWith("/messages");
+  const isBundlePage = pathname === "/marketplace" && searchParams.get("type") === "bundle";
 
   const handleLogout = async () => {
     const res = await logoutAction();
@@ -33,18 +33,16 @@ export default function Header({ currentUser }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-surface-200/50">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Main header row */}
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo */}
+    <header className="sticky top-0 z-50 border-b border-navy-900/[0.06] bg-white/95 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="flex h-[72px] items-center gap-3 lg:gap-5">
           {isMessages && (
             <Link
               href="/"
-              className="shrink-0 p-2 -mr-2 text-surface-600 hover:text-navy-700 hover:bg-surface-100 rounded-lg transition-colors"
+              className="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-surface-500 transition-colors hover:bg-navy-50 hover:text-navy-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500"
               aria-label="بازگشت به خانه">
               <svg
-                className="w-5 h-5 "
+                className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -57,58 +55,70 @@ export default function Header({ currentUser }: HeaderProps) {
               </svg>
             </Link>
           )}
-          <Link href="/" className="shrink-0" aria-label="صفحه اصلی کنکورباز">
+
+          <Link
+            href="/"
+            className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 focus-visible:ring-offset-2"
+            aria-label="صفحه اصلی کنکورباز">
             <Logo size="md" />
           </Link>
 
-          {/* Search bar — hidden on mobile */}
-          <div className="hidden md:flex flex-1 max-w-xl">
-            <div className="relative w-full">
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="نام کتاب، ناشر، درس یا رشته را جستجو کنید"
-                className="w-full rounded-xl border border-surface-200 bg-white/80 px-4 py-2.5 pr-10 text-sm text-surface-800 placeholder:text-surface-400 transition-all focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none"
-                aria-label="جستجوی کتاب"
-              />
-              <svg
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-          </div>
-
-          {/* Desktop nav */}
           <nav
-            className="hidden lg:flex items-center gap-1"
+            className="hidden items-center rounded-full border border-surface-100 bg-surface-50/80 p-1 lg:flex"
             aria-label="ناوبری اصلی">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-3 py-2 text-sm font-medium text-surface-600 hover:text-navy-700 hover:bg-surface-50 rounded-lg transition-colors">
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === "/marketplace?type=bundle"
+                  ? isBundlePage
+                  : link.href === "/marketplace"
+                    ? (pathname === "/marketplace" && !isBundlePage) || pathname.startsWith("/listing/")
+                  : pathname === link.href;
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500",
+                    isActive
+                      ? "bg-white text-navy-800 shadow-sm ring-1 ring-navy-900/[0.06]"
+                      : "text-surface-500 hover:bg-white/70 hover:text-navy-700",
+                  )}>
+                  {link.label}
+                  {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent-500" />}
+                </Link>
+              );
+            })}
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            {/* Sell button */}
-            <Link href="/create-listing" className="hidden sm:block">
-              <Button variant="accent" size="sm">
+          <form action="/marketplace" role="search" className="hidden min-w-0 flex-1 md:block">
+            <div className="relative mx-auto w-full max-w-lg">
+              <input
+                type="search"
+                name="q"
+                defaultValue={searchParams.get("q") ?? ""}
+                placeholder="نام کتاب، ناشر یا درس را جستجو کنید"
+                className="h-11 w-full rounded-full border border-surface-200 bg-surface-50/70 px-11 text-sm text-surface-800 outline-none transition-all placeholder:text-surface-400 hover:border-surface-300 hover:bg-white focus:border-navy-400 focus:bg-white focus:ring-4 focus:ring-navy-500/10"
+                aria-label="جستجوی کتاب"
+              />
+              <button
+                type="submit"
+                className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-surface-400 transition-colors hover:bg-navy-50 hover:text-navy-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500"
+                aria-label="اجرای جستجو">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
+          </form>
+
+          <div className="mr-auto flex shrink-0 items-center gap-2">
+            <Link
+              href="/create-listing"
+              className="hidden h-11 items-center gap-2 rounded-[14px] bg-accent-500 px-4 text-sm font-bold text-white shadow-[0_8px_20px_rgba(245,147,0,0.22)] transition-all hover:-translate-y-0.5 hover:bg-accent-600 hover:shadow-[0_10px_24px_rgba(245,147,0,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 sm:flex">
                 <svg
-                  className="w-4 h-4"
+                  className="h-4 w-4"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -121,17 +131,15 @@ export default function Header({ currentUser }: HeaderProps) {
                   />
                 </svg>
                 فروش کتاب
-              </Button>
             </Link>
 
-            {/* User/Login */}
             {currentUser ? (
-              <div className="relative flex items-center gap-1">
+              <div className="relative flex items-center rounded-full border border-surface-200 bg-surface-50/70 p-1">
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 p-1.5 px-3 rounded-xl hover:bg-surface-100 transition-colors"
+                  className="flex items-center gap-2 rounded-full pr-1 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500"
                   aria-label="پروفایل من">
-                  <div className="w-8 h-8 rounded-full bg-navy-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-navy-700 text-xs font-black text-white shadow-sm ring-2 ring-white">
                     {currentUser.name
                       ? currentUser.name
                           .split(" ")
@@ -139,20 +147,20 @@ export default function Header({ currentUser }: HeaderProps) {
                           .join("")
                           .slice(0, 2)
                       : "U"}
-                  </div>
-                  <span className="hidden md:inline text-sm font-semibold text-surface-800">
+                  </span>
+                  <span className="hidden max-w-24 truncate pl-2 text-xs font-bold text-navy-800 xl:inline">
                     {currentUser.name}
                   </span>
                 </Link>
 
-                <div className="relative">
                   <button
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="p-2 text-surface-500 hover:text-surface-700 hover:bg-surface-100 rounded-lg transition-colors cursor-pointer"
-                    aria-label="منوی کاربری">
+                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-surface-400 transition-colors hover:bg-white hover:text-navy-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500"
+                    aria-label="منوی کاربری"
+                    aria-expanded={userDropdownOpen}>
                     <svg
                       className={cn(
-                        "w-4 h-4 transition-transform",
+                        "h-4 w-4 transition-transform",
                         userDropdownOpen && "rotate-180",
                       )}
                       fill="none"
@@ -173,10 +181,14 @@ export default function Header({ currentUser }: HeaderProps) {
                         className="fixed inset-0 z-10"
                         onClick={() => setUserDropdownOpen(false)}
                       />
-                      <div className="absolute left-0 mt-2 w-48 bg-white rounded-xl border border-surface-200/60 shadow-elevated p-1.5 z-20 animate-scale-in">
+                      <div className="absolute left-0 top-full z-20 mt-3 w-52 animate-scale-in rounded-2xl border border-surface-200/70 bg-white p-2 shadow-[0_18px_50px_rgba(10,17,56,0.16)]">
+                        <div className="border-b border-surface-100 px-3 py-2.5">
+                          <span className="block text-[10px] font-medium text-surface-400">حساب کاربری</span>
+                          <span className="mt-0.5 block truncate text-sm font-bold text-navy-800">{currentUser.name}</span>
+                        </div>
                         <Link
                           href="/dashboard"
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-surface-700 hover:bg-surface-50 hover:text-navy-700 rounded-lg transition-colors font-medium"
+                          className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-surface-700 transition-colors hover:bg-navy-50 hover:text-navy-700"
                           onClick={() => setUserDropdownOpen(false)}>
                           <svg
                             className="w-4 h-4"
@@ -197,7 +209,7 @@ export default function Header({ currentUser }: HeaderProps) {
                             setUserDropdownOpen(false);
                             handleLogout();
                           }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-danger-600 hover:bg-danger-50 rounded-lg transition-colors text-right font-semibold cursor-pointer">
+                          className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-right text-sm font-semibold text-danger-600 transition-colors hover:bg-danger-50">
                           <svg
                             className="w-4 h-4"
                             fill="none"
@@ -215,13 +227,12 @@ export default function Header({ currentUser }: HeaderProps) {
                       </div>
                     </>
                   )}
-                </div>
               </div>
             ) : (
-              <Link href="/auth/login">
-                <Button variant="outline" size="sm">
-                  ورود
-                </Button>
+              <Link
+                href="/auth/login"
+                className="flex h-10 items-center rounded-full border border-navy-200 px-4 text-sm font-bold text-navy-700 transition-colors hover:bg-navy-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 focus-visible:ring-offset-2">
+                ورود
               </Link>
             )}
           </div>
