@@ -1,765 +1,345 @@
-// Seed script: populate MongoDB with initial data
-// Run with: npx tsx scripts/seed.ts
-
+import { setServers } from "node:dns";
 import mongoose from "mongoose";
-import User from "../lib/models/User";
+import Conversation from "../lib/models/Conversation";
 import Listing from "../lib/models/Listing";
+import Message from "../lib/models/Message";
 import Publisher from "../lib/models/Publisher";
+import User from "../lib/models/User";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/konkoorbaz";
+const MONGODB_URI = process.env.MONGODB_URI || "";
+const MONGODB_DB = process.env.MONGODB_DB || "konkoorbaz";
+const ALLOW_LOCAL_SEED = process.env.ALLOW_LOCAL_SEED === "true";
 
-const publishers = [
-  { name: "گاج", slug: "gaj", logo: "" },
-  { name: "قلم‌چی", slug: "ghalam-chi", logo: "" },
-  { name: "خیلی سبز", slug: "kheili-sabz", logo: "" },
-  { name: "مگا بوک", slug: "mega-book", logo: "" },
-  { name: "نشر الگو", slug: "nashr-olgu", logo: "" },
-  { name: "مبتکران", slug: "mobtakeran", logo: "" },
-  { name: "کانون فرهنگی آموزش", slug: "kanoon", logo: "" },
-  { name: "مدرسه", slug: "madreseh", logo: "" },
-  { name: "مهروماه", slug: "mehr-o-mah", logo: "" },
-  { name: "میکرو طبقه‌بندی", slug: "micro", logo: "" },
-  { name: "نردبان", slug: "nardebaan", logo: "" },
-  { name: "خوشخوان", slug: "khoshkhaan", logo: "" },
-];
-
-const users = [
-  {
-    name: "محمد رضایی",
-    phone: "09120004567",
-    role: "user",
-    isVerified: true,
-    province: "تهران",
-    city: "تهران",
-    rating: 4.8,
-    totalSales: 23,
-    totalPurchases: 5,
-  },
-  {
-    name: "زهرا احمدی",
-    phone: "09350008901",
-    role: "user",
-    isVerified: true,
-    province: "اصفهان",
-    city: "اصفهان",
-    rating: 4.9,
-    totalSales: 45,
-    totalPurchases: 12,
-  },
-  {
-    name: "امیرعلی حسینی",
-    phone: "09190002345",
-    role: "user",
-    isVerified: true,
-    province: "فارس",
-    city: "شیراز",
-    rating: 4.6,
-    totalSales: 15,
-    totalPurchases: 8,
-  },
-  {
-    name: "فاطمه موسوی",
-    phone: "09220006789",
-    role: "user",
-    isVerified: false,
-    province: "خراسان رضوی",
-    city: "مشهد",
-    rating: 4.3,
-    totalSales: 7,
-    totalPurchases: 3,
-  },
-  {
-    name: "رضا کریمی",
-    phone: "09360000123",
-    role: "user",
-    isVerified: true,
-    province: "تهران",
-    city: "کرج",
-    rating: 4.7,
-    totalSales: 31,
-    totalPurchases: 9,
-  },
-  {
-    name: "نازنین عباسی",
-    phone: "09180004567",
-    role: "user",
-    isVerified: true,
-    province: "آذربایجان شرقی",
-    city: "تبریز",
-    rating: 5.0,
-    totalSales: 52,
-    totalPurchases: 18,
-  },
-  {
-    name: "حسین نوری",
-    phone: "09130008910",
-    role: "user",
-    isVerified: true,
-    province: "مازندران",
-    city: "ساری",
-    rating: 4.5,
-    totalSales: 11,
-    totalPurchases: 6,
-  },
-];
-
-async function seed() {
-  console.log("Connecting to MongoDB...");
-  await mongoose.connect(MONGODB_URI);
-  console.log("Connected.\n");
-
-  // Clear existing data
-  await User.deleteMany({});
-  await Listing.deleteMany({});
-  await Publisher.deleteMany({});
-  console.log("Cleared existing data.");
-
-  // Seed publishers
-  const createdPublishers = await Publisher.insertMany(publishers);
-  console.log(`Seeded ${createdPublishers.length} publishers.`);
-
-  // Seed users
-  const createdUsers = await User.insertMany(users);
-  console.log(`Seeded ${createdUsers.length} users.`);
-
-  // Helper to get publisher by slug
-  const pubBySlug = (slug: string) =>
-    createdPublishers.find((p) => p.slug === slug)!;
-
-  // Seed listings
-  const listings = [
-    {
-      book: {
-        title: "زیست‌شناسی جامع کنکور",
-        author: "اشکان هاشمی",
-        publisher: { name: pubBySlug("gaj").name, slug: "gaj" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "biology",
-        originalPrice: 980000,
-      },
-      seller: createdUsers[0]._id,
-      price: 450000,
-      originalPrice: 980000,
-      condition: {
-        grade: "excellent",
-        highlighting: true,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: true,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "زیست‌شناسی جامع کنکور گاج", isPrimary: true }],
-      description: "کتاب تمیز و سالم، فقط چند صفحه هایلایت شده. DVD آموزشی هم داره.",
-      year: 1404,
-      edition: 12,
-      city: "تهران",
-      province: "تهران",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "great",
-      views: 342,
-      favorites: 28,
-      status: "active",
-    },
-    {
-      book: {
-        title: "ریاضی تجربی جامع",
-        author: "مهدی امینی‌راد",
-        publisher: { name: pubBySlug("ghalam-chi").name, slug: "ghalam-chi" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "math",
-        originalPrice: 850000,
-      },
-      seller: createdUsers[1]._id,
-      price: 520000,
-      originalPrice: 850000,
-      condition: {
-        grade: "good",
-        highlighting: true,
-        handwrittenNotes: true,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: true,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "ریاضی تجربی جامع قلم‌چی", isPrimary: true }],
-      description: "تست‌ها پاسخ داده شده ولی کتاب سالمه.",
-      year: 1404,
-      edition: 8,
-      city: "اصفهان",
-      province: "اصفهان",
-      shippingAvailable: true,
-      pickupAvailable: false,
-      isBundle: false,
-      priceIndicator: "fair",
-      views: 189,
-      favorites: 15,
-      status: "active",
-    },
-    {
-      book: {
-        title: "فیزیک پایه دوازدهم",
-        author: "محمد عبدالهی",
-        publisher: { name: pubBySlug("kheili-sabz").name, slug: "kheili-sabz" },
-        field: "experimental",
-        grade: "12",
-        subject: "physics",
-        originalPrice: 720000,
-      },
-      seller: createdUsers[2]._id,
-      price: 280000,
-      originalPrice: 720000,
-      condition: {
-        grade: "like-new",
-        highlighting: false,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: true,
-        hasSupplement: true,
-      },
-      images: [{ url: "", alt: "فیزیک پایه دوازدهم خیلی سبز", isPrimary: true }],
-      description: "خریدم ولی از یکی دیگه استفاده کردم. اصلاً باز نشده تقریباً.",
-      year: 1405,
-      edition: 15,
-      city: "شیراز",
-      province: "فارس",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "great",
-      views: 567,
-      favorites: 45,
-      status: "active",
-    },
-    {
-      book: {
-        title: "شیمی جامع کنکور",
-        author: "بهمن بازرگانی",
-        publisher: { name: pubBySlug("gaj").name, slug: "gaj" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "chemistry",
-        originalPrice: 920000,
-      },
-      seller: createdUsers[3]._id,
-      price: 550000,
-      originalPrice: 920000,
-      condition: {
-        grade: "good",
-        highlighting: true,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "شیمی جامع کنکور گاج", isPrimary: true }],
-      description: "هایلایت شده ولی خیلی تمیز.",
-      year: 1404,
-      edition: 10,
-      city: "مشهد",
-      province: "خراسان رضوی",
-      shippingAvailable: true,
-      pickupAvailable: false,
-      isBundle: false,
-      priceIndicator: "fair",
-      views: 234,
-      favorites: 19,
-      status: "active",
-    },
-    {
-      book: {
-        title: "ادبیات فارسی جامع",
-        author: "علی‌اصغر حسینی",
-        publisher: { name: pubBySlug("nashr-olgu").name, slug: "nashr-olgu" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "persian",
-        originalPrice: 650000,
-      },
-      seller: createdUsers[4]._id,
-      price: 250000,
-      originalPrice: 650000,
-      condition: {
-        grade: "excellent",
-        highlighting: false,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "ادبیات فارسی جامع نشر الگو", isPrimary: true }],
-      description: "کاملاً سالم و تمیز.",
-      year: 1404,
-      edition: 6,
-      city: "کرج",
-      province: "البرز",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "great",
-      views: 412,
-      favorites: 33,
-      status: "active",
-    },
-    {
-      book: {
-        title: "عربی کامل کنکور",
-        author: "حسین ادیب",
-        publisher: { name: pubBySlug("ghalam-chi").name, slug: "ghalam-chi" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "arabic",
-        originalPrice: 580000,
-      },
-      seller: createdUsers[5]._id,
-      price: 380000,
-      originalPrice: 580000,
-      condition: {
-        grade: "good",
-        highlighting: true,
-        handwrittenNotes: true,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: true,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "عربی کامل کنکور قلم‌چی", isPrimary: true }],
-      description: "تست‌ها جواب داده شده.",
-      year: 1403,
-      edition: 7,
-      city: "تبریز",
-      province: "آذربایجان شرقی",
-      shippingAvailable: true,
-      pickupAvailable: false,
-      isBundle: false,
-      priceIndicator: "high",
-      views: 156,
-      favorites: 8,
-      status: "active",
-    },
-    {
-      book: {
-        title: "هندسه تحلیلی و جبر خطی",
-        author: "احمد صادقی",
-        publisher: { name: pubBySlug("mobtakeran").name, slug: "mobtakeran" },
-        field: "mathematics",
-        grade: "12",
-        subject: "geometry",
-        originalPrice: 780000,
-      },
-      seller: createdUsers[0]._id,
-      price: 350000,
-      originalPrice: 780000,
-      condition: {
-        grade: "excellent",
-        highlighting: false,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "هندسه تحلیلی مبتکران", isPrimary: true }],
-      description: "فقط یه بار خوندمش.",
-      year: 1405,
-      edition: 9,
-      city: "تهران",
-      province: "تهران",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "great",
-      views: 289,
-      favorites: 22,
-      status: "active",
-    },
-    {
-      book: {
-        title: "حسابان دوازدهم",
-        author: "مصطفی باقری",
-        publisher: { name: pubBySlug("kheili-sabz").name, slug: "kheili-sabz" },
-        field: "mathematics",
-        grade: "12",
-        subject: "math",
-        originalPrice: 690000,
-      },
-      seller: createdUsers[6]._id,
-      price: 420000,
-      originalPrice: 690000,
-      condition: {
-        grade: "acceptable",
-        highlighting: true,
-        handwrittenNotes: true,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: true,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "حسابان دوازدهم خیلی سبز", isPrimary: true }],
-      description: "استفاده شده ولی کامل.",
-      year: 1404,
-      edition: 11,
-      city: "ساری",
-      province: "مازندران",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "high",
-      views: 98,
-      favorites: 5,
-      status: "active",
-    },
-    {
-      book: {
-        title: "تاریخ ایران و جهان",
-        author: "مریم افشار",
-        publisher: { name: pubBySlug("madreseh").name, slug: "madreseh" },
-        field: "humanities",
-        grade: "konkoor",
-        subject: "history",
-        originalPrice: 560000,
-      },
-      seller: createdUsers[3]._id,
-      price: 200000,
-      originalPrice: 560000,
-      condition: {
-        grade: "like-new",
-        highlighting: false,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "تاریخ ایران و جهان مدرسه", isPrimary: true }],
-      description: "تازه خریده بودم ولی رشتم عوض شد.",
-      year: 1405,
-      edition: 4,
-      city: "مشهد",
-      province: "خراسان رضوی",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "great",
-      views: 445,
-      favorites: 37,
-      status: "active",
-    },
-    {
-      book: {
-        title: "زبان انگلیسی جامع کنکور",
-        author: "فرشید یوسفی",
-        publisher: { name: pubBySlug("gaj").name, slug: "gaj" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "english",
-        originalPrice: 750000,
-      },
-      seller: createdUsers[1]._id,
-      price: 480000,
-      originalPrice: 750000,
-      condition: {
-        grade: "good",
-        highlighting: true,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: true,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "زبان انگلیسی جامع گاج", isPrimary: true }],
-      description: "DVD آموزشی سالمه.",
-      year: 1404,
-      edition: 5,
-      city: "اصفهان",
-      province: "اصفهان",
-      shippingAvailable: true,
-      pickupAvailable: false,
-      isBundle: false,
-      priceIndicator: "fair",
-      views: 201,
-      favorites: 14,
-      status: "active",
-    },
-    {
-      book: {
-        title: "فلسفه و منطق جامع",
-        author: "کامران رحیمی",
-        publisher: { name: pubBySlug("nashr-olgu").name, slug: "nashr-olgu" },
-        field: "humanities",
-        grade: "konkoor",
-        subject: "philosophy",
-        originalPrice: 620000,
-      },
-      seller: createdUsers[4]._id,
-      price: 300000,
-      originalPrice: 620000,
-      condition: {
-        grade: "excellent",
-        highlighting: false,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "فلسفه و منطق جامع الگو", isPrimary: true }],
-      description: "وضعیت عالی. اصلاً استفاده نشده.",
-      year: 1405,
-      edition: 3,
-      city: "کرج",
-      province: "البرز",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "great",
-      views: 178,
-      favorites: 12,
-      status: "active",
-    },
-    {
-      book: {
-        title: "دین و زندگی جامع",
-        author: "سعید محمدی",
-        publisher: { name: pubBySlug("ghalam-chi").name, slug: "ghalam-chi" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "religion",
-        originalPrice: 480000,
-      },
-      seller: createdUsers[5]._id,
-      price: 190000,
-      originalPrice: 480000,
-      condition: {
-        grade: "good",
-        highlighting: true,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "دین و زندگی جامع قلم‌چی", isPrimary: true }],
-      description: "هایلایت شده. حالت کتاب خوبه.",
-      year: 1404,
-      edition: 6,
-      city: "تبریز",
-      province: "آذربایجان شرقی",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "great",
-      views: 267,
-      favorites: 21,
-      status: "active",
-    },
-    {
-      book: {
-        title: "فیزیک پایه دهم",
-        author: "رضا ناظمی",
-        publisher: { name: pubBySlug("kheili-sabz").name, slug: "kheili-sabz" },
-        field: "experimental",
-        grade: "10",
-        subject: "physics",
-        originalPrice: 580000,
-      },
-      seller: createdUsers[6]._id,
-      price: 220000,
-      originalPrice: 580000,
-      condition: {
-        grade: "like-new",
-        highlighting: false,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: true,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "فیزیک پایه دهم خیلی سبز", isPrimary: true }],
-      description: "کاملاً نو، خریدم ولی اصلاً استفاده نکردم.",
-      year: 1405,
-      edition: 13,
-      city: "ساری",
-      province: "مازندران",
-      shippingAvailable: true,
-      pickupAvailable: false,
-      isBundle: false,
-      priceIndicator: "great",
-      views: 312,
-      favorites: 26,
-      status: "active",
-    },
-    {
-      book: {
-        title: "روان‌شناسی جامع کنکور",
-        author: "لیلا شهبازی",
-        publisher: { name: pubBySlug("ghalam-chi").name, slug: "ghalam-chi" },
-        field: "humanities",
-        grade: "konkoor",
-        subject: "psychology",
-        originalPrice: 540000,
-      },
-      seller: createdUsers[2]._id,
-      price: 320000,
-      originalPrice: 540000,
-      condition: {
-        grade: "good",
-        highlighting: true,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "روان‌شناسی جامع قلم‌چی", isPrimary: true }],
-      description: "هایلایت شده ولی کاملاً خوانا.",
-      year: 1404,
-      edition: 5,
-      city: "شیراز",
-      province: "فارس",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: false,
-      priceIndicator: "fair",
-      views: 145,
-      favorites: 9,
-      status: "active",
-    },
-    // Bundle listings
-    {
-      book: {
-        title: "پکیج کامل تجربی",
-        author: "گروه مولفان",
-        publisher: { name: pubBySlug("gaj").name, slug: "gaj" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "biology",
-        originalPrice: 4150000,
-      },
-      seller: createdUsers[1]._id,
-      price: 2200000,
-      originalPrice: 4150000,
-      condition: {
-        grade: "good",
-        highlighting: true,
-        handwrittenNotes: true,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: true,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "پکیج کامل تجربی", isPrimary: true }],
-      description: "پکیج کامل دروس اختصاصی تجربی شامل: زیست، شیمی، فیزیک و ریاضی.",
-      year: 1404,
-      edition: 0,
-      city: "اصفهان",
-      province: "اصفهان",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: true,
-      bundleBooks: [
-        { title: "زیست‌شناسی جامع کنکور", author: "اشکان هاشمی", publisher: { name: "گاج", slug: "gaj" }, field: "experimental", grade: "konkoor", subject: "biology", originalPrice: 980000 },
-        { title: "ریاضی تجربی جامع", author: "مهدی امینی‌راد", publisher: { name: "قلم‌چی", slug: "ghalam-chi" }, field: "experimental", grade: "konkoor", subject: "math", originalPrice: 850000 },
-        { title: "فیزیک پایه دوازدهم", author: "محمد عبدالهی", publisher: { name: "خیلی سبز", slug: "kheili-sabz" }, field: "experimental", grade: "12", subject: "physics", originalPrice: 720000 },
-        { title: "شیمی جامع کنکور", author: "بهمن بازرگانی", publisher: { name: "گاج", slug: "gaj" }, field: "experimental", grade: "konkoor", subject: "chemistry", originalPrice: 920000 },
-      ],
-      priceIndicator: "great",
-      views: 823,
-      favorites: 67,
-      status: "active",
-    },
-    {
-      book: {
-        title: "پکیج دروس عمومی",
-        author: "گروه مولفان",
-        publisher: { name: pubBySlug("nashr-olgu").name, slug: "nashr-olgu" },
-        field: "experimental",
-        grade: "konkoor",
-        subject: "persian",
-        originalPrice: 2710000,
-      },
-      seller: createdUsers[0]._id,
-      price: 1500000,
-      originalPrice: 2710000,
-      condition: {
-        grade: "excellent",
-        highlighting: false,
-        handwrittenNotes: false,
-        tornPages: false,
-        missingPages: false,
-        answersCompleted: false,
-        coverDamaged: false,
-        hasCd: false,
-        hasSupplement: false,
-      },
-      images: [{ url: "", alt: "پکیج دروس عمومی", isPrimary: true }],
-      description: "پکیج کامل دروس عمومی: ادبیات، عربی، زبان، دین و زندگی.",
-      year: 1404,
-      edition: 0,
-      city: "تهران",
-      province: "تهران",
-      shippingAvailable: true,
-      pickupAvailable: true,
-      isBundle: true,
-      bundleBooks: [
-        { title: "ادبیات فارسی جامع", author: "علی‌اصغر حسینی", publisher: { name: "نشر الگو", slug: "nashr-olgu" }, field: "experimental", grade: "konkoor", subject: "persian", originalPrice: 650000 },
-        { title: "عربی کامل کنکور", author: "حسین ادیب", publisher: { name: "قلم‌چی", slug: "ghalam-chi" }, field: "experimental", grade: "konkoor", subject: "arabic", originalPrice: 580000 },
-        { title: "زبان انگلیسی جامع کنکور", author: "فرشید یوسفی", publisher: { name: "گاج", slug: "gaj" }, field: "experimental", grade: "konkoor", subject: "english", originalPrice: 750000 },
-        { title: "دین و زندگی جامع", author: "سعید محمدی", publisher: { name: "قلم‌چی", slug: "ghalam-chi" }, field: "experimental", grade: "konkoor", subject: "religion", originalPrice: 480000 },
-      ],
-      priceIndicator: "great",
-      views: 534,
-      favorites: 41,
-      status: "active",
-    },
-  ];
-
-  const createdListings = await Listing.insertMany(listings);
-  console.log(`Seeded ${createdListings.length} listings.`);
-
-  console.log("\nSeed complete!");
-  await mongoose.disconnect();
-  process.exit(0);
+if (!MONGODB_URI) {
+  throw new Error("MONGODB_URI is required. Add the Atlas connection string to .env.local.");
 }
 
-seed().catch((err) => {
-  console.error("Seed error:", err);
-  process.exit(1);
-});
+const isLocalTarget = /(?:localhost|127\.0\.0\.1|\[::1\])/i.test(MONGODB_URI);
+
+if (isLocalTarget && !ALLOW_LOCAL_SEED) {
+  throw new Error(
+    "The seed target is local MongoDB. Set an Atlas MONGODB_URI, or explicitly set ALLOW_LOCAL_SEED=true.",
+  );
+}
+
+if (process.platform === "win32" && MONGODB_URI.startsWith("mongodb+srv://")) {
+  setServers(["1.1.1.1", "8.8.8.8"]);
+}
+
+const publishers = [
+  { name: "گاج", slug: "gaj" },
+  { name: "قلم‌چی", slug: "ghalam-chi" },
+  { name: "خیلی سبز", slug: "kheili-sabz" },
+  { name: "مگا بوک", slug: "mega-book" },
+  { name: "نشر الگو", slug: "nashr-olgu" },
+  { name: "مبتکران", slug: "mobtakeran" },
+  { name: "کانون فرهنگی آموزش", slug: "kanoon" },
+  { name: "مدرسه", slug: "madreseh" },
+  { name: "مهروماه", slug: "mehr-o-mah" },
+  { name: "میکرو طبقه‌بندی", slug: "micro" },
+  { name: "نردبان", slug: "nardebaan" },
+  { name: "خوشخوان", slug: "khoshkhaan" },
+] as const;
+
+const names = [
+  "محمد رضایی",
+  "زهرا احمدی",
+  "امیرعلی حسینی",
+  "فاطمه موسوی",
+  "رضا کریمی",
+  "نازنین عباسی",
+  "حسین نوری",
+  "سارا محمدی",
+  "علی اکبری",
+  "مریم قاسمی",
+  "پارسا مرادی",
+  "نگار حیدری",
+  "آرمان صادقی",
+  "یلدا کاظمی",
+  "سامان جعفری",
+  "ریحانه رستمی",
+  "کیان محمودی",
+  "آوا شریفی",
+  "متین یوسفی",
+  "هستی امینی",
+  "محمدمهدی رحیمی",
+  "بهار سلیمانی",
+  "آریا نادری",
+  "مبینا طاهری",
+  "بردیا قربانی",
+  "ستایش زارعی",
+  "عرفان میرزایی",
+  "ترانه فراهانی",
+  "پوریا اسدی",
+  "مهسا نوروزی",
+] as const;
+
+const locations = [
+  { province: "تهران", city: "تهران" },
+  { province: "اصفهان", city: "اصفهان" },
+  { province: "فارس", city: "شیراز" },
+  { province: "خراسان رضوی", city: "مشهد" },
+  { province: "آذربایجان شرقی", city: "تبریز" },
+  { province: "مازندران", city: "ساری" },
+  { province: "خوزستان", city: "اهواز" },
+  { province: "البرز", city: "کرج" },
+  { province: "گیلان", city: "رشت" },
+  { province: "قم", city: "قم" },
+  { province: "کرمانشاه", city: "کرمانشاه" },
+  { province: "هرمزگان", city: "بندرعباس" },
+] as const;
+
+const books = [
+  { title: "زیست‌شناسی جامع کنکور", author: "اشکان هاشمی", publisher: "gaj", field: "experimental", grade: "konkoor", subject: "biology", price: 980_000 },
+  { title: "ریاضی تجربی جامع", author: "مهدی امینی‌راد", publisher: "ghalam-chi", field: "experimental", grade: "konkoor", subject: "math", price: 850_000 },
+  { title: "فیزیک دوازدهم", author: "محمد عبداللهی", publisher: "kheili-sabz", field: "experimental", grade: "12", subject: "physics", price: 720_000 },
+  { title: "شیمی جامع کنکور", author: "بهمن بازرگانی", publisher: "gaj", field: "experimental", grade: "konkoor", subject: "chemistry", price: 920_000 },
+  { title: "هندسه تحلیلی و جبر خطی", author: "احمد صادقی", publisher: "mobtakeran", field: "mathematics", grade: "12", subject: "geometry", price: 780_000 },
+  { title: "حسابان دوازدهم", author: "مصطفی باقری", publisher: "kheili-sabz", field: "mathematics", grade: "12", subject: "math", price: 690_000 },
+  { title: "ریاضیات گسسته", author: "علیرضا علیزاده", publisher: "nashr-olgu", field: "mathematics", grade: "12", subject: "discrete-math", price: 640_000 },
+  { title: "فیزیک جامع رشته ریاضی", author: "رضا ناظمی", publisher: "mehr-o-mah", field: "mathematics", grade: "konkoor", subject: "physics", price: 890_000 },
+  { title: "ادبیات فارسی جامع", author: "علی‌اصغر حسینی", publisher: "nashr-olgu", field: "humanities", grade: "konkoor", subject: "persian", price: 650_000 },
+  { title: "عربی کامل کنکور", author: "حسین ادیب", publisher: "ghalam-chi", field: "humanities", grade: "konkoor", subject: "arabic", price: 580_000 },
+  { title: "تاریخ ایران و جهان", author: "مریم افشار", publisher: "madreseh", field: "humanities", grade: "konkoor", subject: "history", price: 560_000 },
+  { title: "جغرافیای جامع", author: "کامران فرهمند", publisher: "kanoon", field: "humanities", grade: "konkoor", subject: "geography", price: 510_000 },
+  { title: "جامعه‌شناسی جامع", author: "سارا نامور", publisher: "gaj", field: "humanities", grade: "konkoor", subject: "sociology", price: 590_000 },
+  { title: "فلسفه و منطق جامع", author: "کامران رحیمی", publisher: "nashr-olgu", field: "humanities", grade: "konkoor", subject: "philosophy", price: 620_000 },
+  { title: "روان‌شناسی جامع کنکور", author: "لیلا شهبازی", publisher: "ghalam-chi", field: "humanities", grade: "konkoor", subject: "psychology", price: 540_000 },
+  { title: "اقتصاد کنکور", author: "مهدی آزاد", publisher: "kheili-sabz", field: "humanities", grade: "konkoor", subject: "economics", price: 480_000 },
+  { title: "درک عمومی هنر", author: "نیلوفر احمدی", publisher: "kanoon", field: "art", grade: "konkoor", subject: "art-basics", price: 760_000 },
+  { title: "تاریخ هنر ایران و جهان", author: "بهنام رضوانی", publisher: "madreseh", field: "art", grade: "konkoor", subject: "art-history", price: 680_000 },
+  { title: "طراحی پایه کنکور هنر", author: "سمانه قنبری", publisher: "nardebaan", field: "art", grade: "konkoor", subject: "drawing", price: 820_000 },
+  { title: "خلاقیت تصویری", author: "مونا پاکدل", publisher: "mega-book", field: "art", grade: "konkoor", subject: "art-basics", price: 710_000 },
+  { title: "زبان انگلیسی جامع", author: "فرشید یوسفی", publisher: "gaj", field: "languages", grade: "konkoor", subject: "english", price: 750_000 },
+  { title: "واژگان تخصصی زبان", author: "الهام رفیعی", publisher: "kheili-sabz", field: "languages", grade: "konkoor", subject: "english", price: 490_000 },
+  { title: "گرامر جامع کنکور زبان", author: "کیوان امیدی", publisher: "mehr-o-mah", field: "languages", grade: "konkoor", subject: "grammar", price: 570_000 },
+  { title: "زبان‌شناسی مقدماتی", author: "نرگس توکلی", publisher: "madreseh", field: "languages", grade: "konkoor", subject: "linguistics", price: 530_000 },
+] as const;
+
+const conditionGrades = ["like-new", "excellent", "good", "acceptable"] as const;
+const listingStatuses = ["active", "active", "active", "active", "sold", "reserved"] as const;
+const messageTemplates = [
+  "سلام، این کتاب هنوز موجوده؟",
+  "سلام، بله موجوده و می‌تونم همین هفته ارسال کنم.",
+  "وضعیت جلد و صفحه‌ها دقیقاً چطوره؟",
+  "جلد سالمه و هیچ صفحه‌ای کم یا پاره نشده.",
+  "امکان تخفیف جزئی دارید؟",
+  "قیمت منصفانه گذاشتم، ولی برای خرید قطعی کمی راه میام.",
+  "ارسال به شهر من با پست انجام می‌شه؟",
+  "بله، با پست پیشتاز یا تیپاکس قابل ارساله.",
+  "خیلی خوبه، برای هماهنگی نهایی پیام می‌دم.",
+  "حتماً، هر زمان آماده بودید در خدمتم.",
+] as const;
+
+async function runInBatches<T>(
+  items: readonly T[],
+  action: (item: T, index: number) => Promise<unknown>,
+  batchSize = 25,
+) {
+  for (let offset = 0; offset < items.length; offset += batchSize) {
+    await Promise.all(
+      items.slice(offset, offset + batchSize).map((item, index) =>
+        action(item, offset + index),
+      ),
+    );
+  }
+}
+
+async function seed() {
+  console.log("Connecting to configured remote MongoDB...");
+  await mongoose.connect(MONGODB_URI, {
+    dbName: MONGODB_DB,
+    serverSelectionTimeoutMS: 15_000,
+  });
+  console.log(`Connected to database: ${mongoose.connection.name}`);
+
+  await runInBatches(publishers, (publisher) =>
+    Publisher.updateOne(
+      { slug: publisher.slug },
+      { $set: { ...publisher, logo: "" } },
+      { upsert: true },
+    ),
+  );
+
+  const userSeeds = names.map((name, index) => {
+    const location = locations[index % locations.length];
+    return {
+      name,
+      email: `seed.user.${index + 1}@konkoorbaz.test`,
+      phone: index === 0 ? "09120004567" : `091${String(index).padStart(8, "0")}`,
+      role: "user" as const,
+      isVerified: index % 5 !== 0,
+      province: location.province,
+      city: location.city,
+      rating: Number((4.2 + (index % 9) * 0.1).toFixed(1)),
+      totalSales: 4 + ((index * 7) % 53),
+      totalPurchases: 1 + ((index * 3) % 18),
+    };
+  });
+
+  await runInBatches(userSeeds, (user) =>
+    User.updateOne({ phone: user.phone }, { $set: user }, { upsert: true }),
+  );
+
+  const [createdUsers, createdPublishers] = await Promise.all([
+    User.find({ phone: { $in: userSeeds.map((user) => user.phone) } }),
+    Publisher.find({ slug: { $in: publishers.map((publisher) => publisher.slug) } }),
+  ]);
+  const usersByPhone = new Map(createdUsers.map((user) => [user.phone, user]));
+  const publishersBySlug = new Map(
+    createdPublishers.map((publisher) => [publisher.slug, publisher]),
+  );
+
+  const listingSeeds = Array.from({ length: 120 }, (_, index) => {
+    const book = books[index % books.length];
+    const userSeed = userSeeds[index % userSeeds.length];
+    const seller = usersByPhone.get(userSeed.phone);
+    const publisher = publishersBySlug.get(book.publisher);
+    const condition = conditionGrades[index % conditionGrades.length];
+    const year = 1401 + (index % 5);
+    const originalPrice = book.price + (index % 4) * 35_000;
+    const priceRatio = 0.38 + (index % 5) * 0.08;
+
+    if (!seller || !publisher) throw new Error("Seed references could not be resolved.");
+
+    return {
+      seller: seller._id,
+      book: {
+        title: `${book.title} — چاپ ${year}`,
+        author: book.author,
+        publisher: { name: publisher.name, slug: publisher.slug },
+        field: book.field,
+        grade: book.grade,
+        subject: book.subject,
+        originalPrice,
+        coverImage: "",
+      },
+      price: Math.round((originalPrice * priceRatio) / 10_000) * 10_000,
+      originalPrice,
+      condition: {
+        grade: condition,
+        highlighting: index % 4 === 0,
+        handwrittenNotes: index % 7 === 0,
+        tornPages: false,
+        missingPages: false,
+        answersCompleted: index % 6 === 0,
+        coverDamaged: index % 17 === 0,
+        hasCd: index % 8 === 0,
+        hasSupplement: index % 11 === 0,
+        notes: condition === "like-new" ? "تقریباً بدون استفاده" : "شرح وضعیت در تصاویر و توضیحات درج شده است.",
+      },
+      images: [],
+      description: `نسخه چاپ ${year}، مناسب برای مطالعه و جمع‌بندی. کتاب کامل است و با بسته‌بندی مطمئن ارسال می‌شود.`,
+      year,
+      edition: 1 + (index % 12),
+      city: userSeed.city,
+      province: userSeed.province,
+      shippingAvailable: true,
+      pickupAvailable: index % 3 === 0,
+      isBundle: false,
+      bundleBooks: [],
+      priceIndicator: index % 4 === 0 ? "great" as const : "fair" as const,
+      views: 35 + ((index * 47) % 1_900),
+      favorites: 2 + ((index * 13) % 95),
+      status: listingStatuses[index % listingStatuses.length],
+    };
+  });
+
+  await runInBatches(listingSeeds, (listing) =>
+    Listing.updateOne(
+      { seller: listing.seller, "book.title": listing.book.title },
+      { $set: listing },
+      { upsert: true },
+    ),
+  );
+
+  const seededListings = await Listing.find({
+    seller: { $in: createdUsers.map((user) => user._id) },
+    "book.title": { $in: listingSeeds.map((listing) => listing.book.title) },
+  }).sort({ createdAt: 1 });
+
+  const conversationSeeds = seededListings.slice(0, 40).map((listing, index) => {
+    const sellerId = listing.seller.toString();
+    const buyer = createdUsers.find(
+      (user, userIndex) => userIndex >= index % createdUsers.length && user._id.toString() !== sellerId,
+    ) || createdUsers.find((user) => user._id.toString() !== sellerId);
+
+    if (!buyer) throw new Error("A buyer could not be selected for a seeded conversation.");
+
+    return { listing: listing._id, participants: [listing.seller, buyer._id] };
+  });
+
+  await runInBatches(conversationSeeds, (conversation, index) =>
+    Conversation.updateOne(
+      { listing: conversation.listing },
+      {
+        $set: {
+          participants: conversation.participants,
+          listing: conversation.listing,
+          lastMessageAt: new Date(Date.UTC(2026, 5, 1 + index, 12)),
+        },
+      },
+      { upsert: true },
+    ),
+  );
+
+  const seededConversations = await Conversation.find({
+    listing: { $in: conversationSeeds.map((conversation) => conversation.listing) },
+  }).sort({ createdAt: 1 });
+
+  const messageSeeds = seededConversations.flatMap((conversation, conversationIndex) =>
+    messageTemplates.map((content, messageIndex) => ({
+      conversation: conversation._id,
+      sender: conversation.participants[messageIndex % 2],
+      content,
+      image: "",
+      isRead: messageIndex < 8 || conversationIndex % 3 === 0,
+      createdAt: new Date(Date.UTC(2026, 5, 1 + conversationIndex, 12 + messageIndex)),
+    })),
+  );
+
+  await runInBatches(messageSeeds, (message) =>
+    Message.updateOne(
+      { conversation: message.conversation, sender: message.sender, content: message.content },
+      {
+        $set: { image: message.image, isRead: message.isRead },
+        $setOnInsert: { createdAt: message.createdAt },
+      },
+      { upsert: true },
+    ),
+  );
+
+  await runInBatches(seededConversations, async (conversation) => {
+    const lastMessage = await Message.findOne({ conversation: conversation._id }).sort({ createdAt: -1 });
+    if (!lastMessage) return;
+    await Conversation.updateOne(
+      { _id: conversation._id },
+      { $set: { lastMessage: lastMessage._id, lastMessageAt: lastMessage.createdAt } },
+    );
+  });
+
+  const seededCounts = await Promise.all([
+    User.countDocuments({ phone: { $in: userSeeds.map((user) => user.phone) } }),
+    Publisher.countDocuments({ slug: { $in: publishers.map((publisher) => publisher.slug) } }),
+    Listing.countDocuments({ _id: { $in: seededListings.map((listing) => listing._id) } }),
+    Conversation.countDocuments({ _id: { $in: seededConversations.map((conversation) => conversation._id) } }),
+    Message.countDocuments({ conversation: { $in: seededConversations.map((conversation) => conversation._id) } }),
+  ]);
+
+  console.log("Seed complete (safe to rerun):");
+  console.log(`  Users: ${seededCounts[0]}`);
+  console.log(`  Publishers: ${seededCounts[1]}`);
+  console.log(`  Listings: ${seededCounts[2]}`);
+  console.log(`  Conversations: ${seededCounts[3]}`);
+  console.log(`  Messages: ${seededCounts[4]}`);
+}
+
+seed()
+  .catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "Unknown seed error";
+    console.error(`Seed failed: ${message}`);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await mongoose.disconnect();
+  });
