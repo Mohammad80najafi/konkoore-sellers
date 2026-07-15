@@ -36,6 +36,7 @@ export default async function HomePage() {
         subtitle="آخرین کتاب‌های اضافه شده به بازار"
         listings={recent}
         viewAllHref="/marketplace?sort=newest"
+        surface
       />
       <BundleDeals bundles={bundles} />
       <PopularPublishers />

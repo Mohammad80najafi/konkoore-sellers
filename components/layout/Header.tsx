@@ -10,7 +10,7 @@ import { logoutAction } from "@/lib/auth-actions";
 
 const navLinks = [
   { href: "/marketplace", label: "بازار کتاب" },
-  { href: "/marketplace?type=bundle", label: "پکیج‌ها" },
+  { href: "/messages", label: "پیام‌ها" },
   { href: "/about", label: "درباره ما" },
 ];
 
@@ -23,7 +23,6 @@ export default function Header({ currentUser }: HeaderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isMessages = pathname.startsWith("/messages");
-  const isBundlePage = pathname === "/marketplace" && searchParams.get("type") === "bundle";
 
   const handleLogout = async () => {
     const res = await logoutAction();
@@ -68,11 +67,9 @@ export default function Header({ currentUser }: HeaderProps) {
             aria-label="ناوبری اصلی">
             {navLinks.map((link) => {
               const isActive =
-                link.href === "/marketplace?type=bundle"
-                  ? isBundlePage
-                  : link.href === "/marketplace"
-                    ? (pathname === "/marketplace" && !isBundlePage) || pathname.startsWith("/listing/")
-                  : pathname === link.href;
+                link.href === "/marketplace"
+                  ? pathname === "/marketplace" || pathname.startsWith("/listing/")
+                  : pathname === link.href || pathname.startsWith(`${link.href}/`);
 
               return (
                 <Link

@@ -3,26 +3,31 @@ import Link from "next/link";
 
 export default function PopularPublishers() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-10">
-      <h2 className="text-xl md:text-2xl font-bold text-navy-800 mb-6 text-center">
-        ناشران محبوب
-      </h2>
+    <section className="border-b border-surface-100 bg-surface-50/60 py-14 md:py-16">
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="mb-7 flex items-end justify-between gap-4">
+          <div>
+            <span className="text-xs font-bold text-accent-600">قفسه ناشران</span>
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-navy-800 md:text-3xl">ناشر مورد اعتمادت را پیدا کن</h2>
+          </div>
+          <p className="hidden text-sm text-surface-500 md:block">دسترسی سریع به کتاب‌های ناشران محبوب کنکور</p>
+        </div>
 
-      <div className="flex gap-3 overflow-x-auto scrollbar-hidden pb-2">
-        {PUBLISHERS.map((publisher) => (
-          <Link
-            key={publisher.id}
-            href={`/marketplace?publisher=${publisher.id}`}
-            className="flex flex-col items-center gap-2 min-w-[100px] p-4 bg-white rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 card-hover"
-          >
-            <div className="w-14 h-14 rounded-xl bg-navy-50 flex items-center justify-center text-2xl">
-              📘
-            </div>
-            <span className="text-xs font-medium text-surface-700 text-center whitespace-nowrap">
-              {publisher.name}
-            </span>
-          </Link>
-        ))}
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {PUBLISHERS.map((publisher) => (
+            <Link
+              key={publisher.id}
+              href={`/marketplace?publisher=${publisher.id}`}
+              className="group flex min-h-20 items-center gap-3 rounded-2xl border border-surface-100 bg-white p-3 transition duration-300 hover:-translate-y-0.5 hover:border-navy-200 hover:shadow-[0_10px_28px_rgba(10,17,56,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500">
+              <span className="flex h-11 w-9 shrink-0 items-center justify-center rounded-md rounded-r-xl bg-navy-700 text-sm font-black text-white shadow-sm transition-transform group-hover:-rotate-3" aria-hidden="true">
+                {publisher.name[0]}
+              </span>
+              <span className="text-xs font-bold leading-5 text-surface-700 transition-colors group-hover:text-navy-700">
+                {publisher.name}
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   );
