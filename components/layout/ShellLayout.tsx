@@ -15,7 +15,11 @@ export default async function ShellLayout({
 
   return (
     <>
-      <Header currentUser={currentUser} />
+      <Header
+        currentUser={currentUser}
+        unreadCount={unreadCount}
+        sessionToken={sessionToken}
+      />
       <main className="flex-1 pb-16 lg:pb-0">{children}</main>
       <Footer />
       <MobileNav currentUser={currentUser} unreadCount={unreadCount} sessionToken={sessionToken} />

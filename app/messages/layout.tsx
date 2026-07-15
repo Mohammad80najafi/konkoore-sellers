@@ -10,7 +10,11 @@ export default async function MessagesLayout({ children }: { children: React.Rea
 
   return (
     <>
-      <Header currentUser={currentUser} />
+      <Header
+        currentUser={currentUser}
+        unreadCount={unreadCount}
+        sessionToken={sessionToken}
+      />
       <main className="flex-1 pb-16 lg:pb-0">{children}</main>
       <MobileNav currentUser={currentUser} unreadCount={unreadCount} sessionToken={sessionToken} />
     </>

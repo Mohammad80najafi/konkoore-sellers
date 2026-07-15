@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import Logo from "./Logo";
 import { cn } from "@/lib/utils";
 import type { User } from "@/lib/types";
 import { logoutAction } from "@/lib/auth-actions";
+import { connectSocket } from "@/lib/socket-client";
 
 const navLinks = [
   { href: "/marketplace", label: "بازار کتاب" },
@@ -16,13 +17,32 @@ const navLinks = [
 
 interface HeaderProps {
   currentUser?: User | null;
+  unreadCount?: number;
+  sessionToken?: string | null;
 }
 
-export default function Header({ currentUser }: HeaderProps) {
+export default function Header({
+  currentUser,
+  unreadCount = 0,
+  sessionToken,
+}: HeaderProps) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [messageCount, setMessageCount] = useState(unreadCount);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isMessages = pathname.startsWith("/messages");
+
+  useEffect(() => {
+    if (!currentUser || !sessionToken) return;
+
+    const socket = connectSocket(sessionToken);
+    const handleUnreadCount = (nextCount: number) => setMessageCount(nextCount);
+
+    socket.on("unread-count", handleUnreadCount);
+    return () => {
+      socket.off("unread-count", handleUnreadCount);
+    };
+  }, [currentUser, sessionToken]);
 
   const handleLogout = async () => {
     const res = await logoutAction();
@@ -77,12 +97,20 @@ export default function Header({ currentUser }: HeaderProps) {
                   href={link.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500",
+                    "relative flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500",
                     isActive
                       ? "bg-white text-navy-800 shadow-sm ring-1 ring-navy-900/[0.06]"
                       : "text-surface-500 hover:bg-white/70 hover:text-navy-700",
                   )}>
                   {link.label}
+                  {link.href === "/messages" && messageCount > 0 && (
+                    <span
+                      className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger-500 px-1 text-[10px] font-black leading-none text-white shadow-sm"
+                      aria-label={`${messageCount.toLocaleString("fa-IR")} پیام خوانده‌نشده`}
+                    >
+                      {messageCount > 99 ? "۹۹+" : messageCount.toLocaleString("fa-IR")}
+                    </span>
+                  )}
                   {isActive && <span className="h-1.5 w-1.5 rounded-full bg-accent-500" />}
                 </Link>
               );
