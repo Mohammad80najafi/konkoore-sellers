@@ -1,28 +1,50 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { cn, toPersianDigits } from "@/lib/utils";
 import {
+  BOOK_CONDITIONS,
   FIELDS_OF_STUDY,
   GRADES,
-  BOOK_CONDITIONS,
   PROVINCES,
-  SUBJECTS,
   PUBLISHERS,
+  SUBJECTS,
 } from "@/lib/constants";
 import { createListingAction } from "@/lib/auth-actions";
 
 type Step = 1 | 2 | 3 | 4;
 
+const MAX_IMAGES = 8;
+
 const steps = [
-  { id: 1, label: "اطلاعات کتاب" },
-  { id: 2, label: "وضعیت و جزئیات" },
-  { id: 3, label: "قیمت و ارسال" },
-  { id: 4, label: "توضیحات" },
-];
+  {
+    id: 1,
+    label: "مشخصات کتاب",
+    shortLabel: "کتاب",
+    description: "عنوان، رشته و عکس‌های کتاب",
+  },
+  {
+    id: 2,
+    label: "وضعیت کتاب",
+    shortLabel: "وضعیت",
+    description: "چاپ، ویرایش و جزئیات ظاهری",
+  },
+  {
+    id: 3,
+    label: "قیمت و تحویل",
+    shortLabel: "قیمت",
+    description: "قیمت‌گذاری و روش دریافت",
+  },
+  {
+    id: 4,
+    label: "بازبینی و انتشار",
+    shortLabel: "انتشار",
+    description: "توضیحات نهایی و پیش‌نمایش",
+  },
+] as const;
 
 export default function CreateListingForm() {
   const router = useRouter();
@@ -30,15 +52,14 @@ export default function CreateListingForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
-  const [field, setField] = useState<string>("");
-  const [grade, setGrade] = useState<string>("");
-  const [subject, setSubject] = useState<string>("");
+  const [field, setField] = useState("");
+  const [grade, setGrade] = useState("");
+  const [subject, setSubject] = useState("");
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [publisher, setPublisher] = useState("");
-  const [condition, setCondition] = useState<string>("");
-  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [condition, setCondition] = useState("");
+  const [year, setYear] = useState("1405");
   const [edition, setEdition] = useState("");
   const [originalPrice, setOriginalPrice] = useState("");
   const [price, setPrice] = useState("");
@@ -58,27 +79,41 @@ export default function CreateListingForm() {
   const [images, setImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const MAX_IMAGES = 8;
-
   const selectedSubjects = field ? SUBJECTS[field] || [] : [];
-  const selectedProvince = PROVINCES.find((p) => p.name === province);
+  const selectedProvince = PROVINCES.find((item) => item.name === province);
   const cities = selectedProvince?.cities || [];
+  const selectedCondition = BOOK_CONDITIONS.find((item) => item.id === condition);
+  const activeStep = steps[currentStep - 1];
+  const progress = (currentStep / steps.length) * 100;
+  const hasPrice = Number(price) > 0;
+  const hasOriginalPrice = Number(originalPrice) > 0;
+  const discount =
+    hasPrice && hasOriginalPrice
+      ? Math.round(((Number(originalPrice) - Number(price)) / Number(originalPrice)) * 100)
+      : 0;
 
-  const canProceed = (): boolean => {
+  const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return !!field && !!grade && !!subject && !!title.trim() && !!author.trim() && !!publisher;
+        return Boolean(
+          field &&
+            grade &&
+            subject &&
+            title.trim() &&
+            author.trim() &&
+            publisher
+        );
       case 2:
-        return !!condition && !!year;
+        return Boolean(condition && year);
       case 3:
-        return !!price && !!originalPrice && !!province && !!city;
+        return Boolean(price && originalPrice && province && city);
       case 4:
         return true;
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
     if (!files) return;
 
     const remaining = MAX_IMAGES - images.length;
@@ -88,24 +123,20 @@ export default function CreateListingForm() {
       if (file.size > 5 * 1024 * 1024) continue;
       const formData = new FormData();
       formData.append("file", file);
+
       try {
-        const res = await fetch("/api/upload", { method: "POST", body: formData });
-        const data = await res.json();
-        if (data.url) {
-          setImages((prev) => [...prev, data.url]);
-        }
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        if (data.url) setImages((current) => [...current, data.url]);
       } catch {
-        // silently skip failed uploads
+        // A failed image is skipped so the remaining files can still upload.
       }
     }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async () => {
@@ -139,525 +170,696 @@ export default function CreateListingForm() {
       coverDamaged,
       hasCd,
       hasSupplement,
-      images: images.map((url, i) => ({ url, alt: `${title} - ${i + 1}`, isPrimary: i === 0 })),
+      images: images.map((url, index) => ({
+        url,
+        alt: `${title} - ${index + 1}`,
+        isPrimary: index === 0,
+      })),
     });
 
     setIsLoading(false);
 
     if (result.success && result.listingId) {
-      router.push(`/dashboard`);
+      router.push("/dashboard");
     } else {
-      setError(result.error || "خطایی رخ داد.");
+      setError(result.error || "خطایی رخ داد. دوباره تلاش کنید.");
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden">
-      {/* Step indicator */}
-      <div className="border-b border-surface-100 px-6 py-4">
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors",
-                    currentStep >= step.id
-                      ? "bg-navy-600 text-white"
-                      : "bg-surface-100 text-surface-400"
-                  )}
-                >
-                  {currentStep > step.id ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    step.id
-                  )}
-                </div>
-                <span
-                  className={cn(
-                    "text-xs font-medium hidden sm:inline",
-                    currentStep >= step.id ? "text-navy-700" : "text-surface-400"
-                  )}
-                >
-                  {step.label}
-                </span>
-              </div>
-              {index < steps.length - 1 && (
-                <div
-                  className={cn(
-                    "w-8 sm:w-16 h-0.5 mx-2 sm:mx-3",
-                    currentStep > step.id ? "bg-navy-600" : "bg-surface-100"
-                  )}
-                />
-              )}
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_19rem] xl:gap-7">
+      <section className="overflow-hidden rounded-[1.75rem] border border-surface-200/80 bg-white shadow-[0_18px_55px_-34px_rgba(15,23,42,0.35)]">
+        <header className="border-b border-surface-100 bg-[linear-gradient(135deg,#fff_0%,#fbfcff_55%,#fff7ed_100%)] px-5 py-5 sm:px-7 sm:py-6">
+          <div className="flex items-start gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-navy-700 text-sm font-black text-white shadow-lg shadow-navy-900/15">
+              {toPersianDigits(currentStep)}
+            </span>
+            <div>
+              <p className="mb-1 text-xs font-bold tracking-wide text-accent-600">
+                مرحله {toPersianDigits(currentStep)} از {toPersianDigits(steps.length)}
+              </p>
+              <h2 className="text-xl font-black text-navy-900 sm:text-2xl">
+                {activeStep.label}
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-surface-500">
+                {activeStep.description}
+              </p>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Form content */}
-      <div className="p-6 min-h-[400px]">
-        {error && (
-          <div className="mb-4 p-3 bg-danger-50 text-danger-600 text-sm rounded-xl">
-            {error}
           </div>
-        )}
+        </header>
 
-        {/* Step 1: Book Info */}
-        {currentStep === 1 && (
-          <div className="space-y-5">
-            <h3 className="text-base font-bold text-navy-800">اطلاعات کتاب</h3>
-
-            {/* Field */}
-            <div>
-              <label className="text-sm font-medium text-surface-700 mb-2 block">رشته تحصیلی</label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {FIELDS_OF_STUDY.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => { setField(f.id); setSubject(""); }}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-xs font-medium transition-all cursor-pointer",
-                      field === f.id
-                        ? "bg-navy-600 text-white border-navy-600"
-                        : "bg-white text-surface-600 border-surface-200 hover:border-navy-300"
-                    )}
-                  >
-                    <span className="text-xl">{f.icon}</span>
-                    <span>{f.label}</span>
-                  </button>
-                ))}
-              </div>
+        <div className="px-5 py-6 sm:px-7 sm:py-8">
+          {error && (
+            <div
+              className="mb-6 flex items-start gap-3 rounded-2xl border border-danger-100 bg-danger-50 p-4 text-sm text-danger-700"
+              role="alert"
+            >
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-danger-100 font-bold">
+                !
+              </span>
+              {error}
             </div>
+          )}
 
-            {/* Grade */}
-            <div>
-              <label className="text-sm font-medium text-surface-700 mb-2 block">پایه تحصیلی</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {GRADES.map((g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => setGrade(g.id)}
-                    className={cn(
-                      "px-3 py-2.5 rounded-xl border text-sm font-medium transition-all cursor-pointer",
-                      grade === g.id
-                        ? "bg-navy-600 text-white border-navy-600"
-                        : "bg-white text-surface-600 border-surface-200 hover:border-navy-300"
-                    )}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Subject */}
-            <div>
-              <label className="text-sm font-medium text-surface-700 mb-2 block">درس</label>
-              <div className="flex flex-wrap gap-2">
-                {selectedSubjects.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setSubject(s.id)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer",
-                      subject === s.id
-                        ? "bg-accent-500 text-white border-accent-500"
-                        : "bg-white text-surface-600 border-surface-200 hover:border-accent-300"
-                    )}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-                {selectedSubjects.length === 0 && (
-                  <p className="text-xs text-surface-400">ابتدا رشته را انتخاب کنید</p>
-                )}
-              </div>
-            </div>
-
-            {/* Title */}
-            <Input
-              label="عنوان کتاب"
-              placeholder="مثال: زیست‌شناسی جامع گاج"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-
-            {/* Author */}
-            <Input
-              label="نویسنده / مولف"
-              placeholder="مثال: دکتر احمدی"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-            />
-
-            {/* Publisher */}
-            <div>
-              <label className="text-sm font-medium text-surface-700 mb-2 block">ناشر</label>
-              <div className="flex flex-wrap gap-2">
-                {PUBLISHERS.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setPublisher(p.name)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer",
-                      publisher === p.name
-                        ? "bg-navy-600 text-white border-navy-600"
-                        : "bg-white text-surface-600 border-surface-200 hover:border-navy-300"
-                    )}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Images */}
-            <div>
-              <label className="text-sm font-medium text-surface-700 mb-2 block">
-                عکس‌های کتاب ({images.length}/{MAX_IMAGES})
-              </label>
-              <p className="text-xs text-surface-400 mb-3">حداقل ۱ و حداکثر ۸ عکس از زاویه‌های مختلف</p>
-
-              {/* Image preview grid */}
-              {images.length > 0 && (
-                <div className="grid grid-cols-4 gap-2 mb-3">
-                  {images.map((img, index) => (
-                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-surface-200 group">
-                      <img src={img} alt={`عکس ${index + 1}`} className="w-full h-full object-cover" />
-                      {index === 0 && (
-                        <span className="absolute top-1 right-1 text-[9px] bg-navy-600 text-white px-1.5 py-0.5 rounded-md font-medium">
-                          اصلی
-                        </span>
+          {currentStep === 1 && (
+            <div className="space-y-8">
+              <div>
+                <FormLabel title="رشته تحصیلی" hint="کتاب برای کدام گروه درسی است؟" />
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+                  {FIELDS_OF_STUDY.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setField(item.id);
+                        setSubject("");
+                      }}
+                      className={cn(
+                        "group relative flex min-h-24 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border px-3 py-3 text-xs font-bold transition-all",
+                        field === item.id
+                          ? "border-navy-700 bg-navy-700 text-white shadow-lg shadow-navy-900/15"
+                          : "border-surface-200 bg-surface-50/60 text-surface-700 hover:-translate-y-0.5 hover:border-navy-300 hover:bg-white"
                       )}
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 left-1 w-5 h-5 bg-danger-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-xs"
-                      >
-                        ×
-                      </button>
-                    </div>
+                    >
+                      <span className="text-2xl">{item.icon}</span>
+                      <span>{item.label}</span>
+                      {field === item.id && (
+                        <span className="absolute left-2 top-2 h-1.5 w-1.5 rounded-full bg-accent-400" />
+                      )}
+                    </button>
                   ))}
                 </div>
-              )}
+              </div>
 
-              {/* Upload button */}
-              {images.length < MAX_IMAGES && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-8 border-2 border-dashed border-surface-200 rounded-xl text-surface-400 hover:border-navy-300 hover:text-navy-600 transition-colors cursor-pointer flex flex-col items-center gap-2"
-                >
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-sm font-medium">انتخاب عکس</span>
-                  <span className="text-[11px]">JPG, PNG — حداکثر ۵ مگابایت</span>
-                </button>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </div>
-          </div>
-        )}
+              <div>
+                <FormLabel title="پایه تحصیلی" hint="مناسب‌ترین پایه را انتخاب کنید" />
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  {GRADES.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setGrade(item.id)}
+                      className={cn(
+                        "rounded-xl border px-3 py-3 text-sm font-bold transition-all",
+                        grade === item.id
+                          ? "border-navy-700 bg-navy-50 text-navy-800 shadow-[inset_0_-2px_0_#1e3a8a]"
+                          : "border-surface-200 bg-white text-surface-600 hover:border-navy-300 hover:text-navy-700"
+                      )}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-        {/* Step 2: Condition & Details */}
-        {currentStep === 2 && (
-          <div className="space-y-5">
-            <h3 className="text-base font-bold text-navy-800">وضعیت و جزئیات</h3>
+              <div className="rounded-2xl border border-surface-100 bg-surface-50/70 p-4 sm:p-5">
+                <FormLabel title="درس" hint="بعد از انتخاب رشته، درس‌های مرتبط اینجا نمایش داده می‌شوند" />
+                <div className="flex min-h-8 flex-wrap gap-2">
+                  {selectedSubjects.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSubject(item.id)}
+                      className={cn(
+                        "rounded-full border px-3.5 py-2 text-xs font-bold transition-all",
+                        subject === item.id
+                          ? "border-accent-500 bg-accent-500 text-white shadow-sm"
+                          : "border-surface-200 bg-white text-surface-600 hover:border-accent-300 hover:text-accent-700"
+                      )}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                  {selectedSubjects.length === 0 && (
+                    <p className="flex items-center gap-2 text-xs text-surface-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-surface-300" />
+                      ابتدا رشته تحصیلی را انتخاب کنید
+                    </p>
+                  )}
+                </div>
+              </div>
 
-            {/* Condition */}
-            <div>
-              <label className="text-sm font-medium text-surface-700 mb-3 block">وضعیت کتاب</label>
-              <div className="space-y-2">
-                {BOOK_CONDITIONS.map((c) => (
-                  <label
-                    key={c.id}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all",
-                      condition === c.id
-                        ? "bg-navy-50 border-navy-300 text-navy-700"
-                        : "bg-white border-surface-200 text-surface-600 hover:border-surface-300"
-                    )}
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Input
+                  label="عنوان دقیق کتاب"
+                  placeholder="مثال: زیست‌شناسی جامع خیلی سبز"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  className="h-12 rounded-2xl"
+                />
+                <Input
+                  label="نویسنده یا مؤلف"
+                  placeholder="مثال: دکتر احمدی"
+                  value={author}
+                  onChange={(event) => setAuthor(event.target.value)}
+                  className="h-12 rounded-2xl"
+                />
+              </div>
+
+              <div>
+                <FormLabel title="ناشر" hint="نام ناشر روی جلد کتاب را انتخاب کنید" />
+                <div className="flex flex-wrap gap-2">
+                  {PUBLISHERS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setPublisher(item.name)}
+                      className={cn(
+                        "rounded-xl border px-3.5 py-2 text-xs font-bold transition-all",
+                        publisher === item.name
+                          ? "border-navy-700 bg-navy-700 text-white"
+                          : "border-surface-200 bg-white text-surface-600 hover:border-navy-300"
+                      )}
+                    >
+                      {item.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-3 flex items-end justify-between gap-4">
+                  <FormLabel
+                    title="عکس‌های کتاب"
+                    hint="عکس اول، تصویر اصلی آگهی خواهد بود"
+                    className="mb-0"
+                  />
+                  <span className="shrink-0 rounded-full bg-navy-50 px-2.5 py-1 text-xs font-bold text-navy-700">
+                    {toPersianDigits(images.length)} / {toPersianDigits(MAX_IMAGES)}
+                  </span>
+                </div>
+
+                {images.length > 0 && (
+                  <div className="mb-3 grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+                    {images.map((image, index) => (
+                      <div
+                        key={image}
+                        className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-surface-200 bg-surface-100"
+                      >
+                        <span
+                          className="absolute inset-0 bg-cover bg-center"
+                          style={{ backgroundImage: `url(${image})` }}
+                          role="img"
+                          aria-label={`عکس ${toPersianDigits(index + 1)} کتاب`}
+                        />
+                        {index === 0 && (
+                          <span className="absolute bottom-2 right-2 rounded-full bg-navy-800/90 px-2 py-1 text-[10px] font-bold text-white backdrop-blur">
+                            عکس اصلی
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setImages((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                          className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-base font-bold text-danger-600 opacity-100 shadow-sm transition sm:opacity-0 sm:group-hover:opacity-100"
+                          aria-label={`حذف عکس ${toPersianDigits(index + 1)}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {images.length < MAX_IMAGES && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="group flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-surface-200 bg-surface-50/70 p-5 text-right transition-all hover:border-accent-300 hover:bg-accent-50/40 sm:p-6"
                   >
-                    <input
-                      type="radio"
-                      name="condition"
-                      value={c.id}
-                      checked={condition === c.id}
-                      onChange={() => setCondition(c.id)}
-                      className="w-4 h-4 accent-navy-600"
-                    />
-                    <div className="flex-1">
-                      <span className="text-sm font-medium">{c.label}</span>
-                      <p className="text-xs text-surface-500 mt-0.5">{c.description}</p>
-                    </div>
-                  </label>
-                ))}
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-accent-600 shadow-sm ring-1 ring-surface-100 transition-transform group-hover:-rotate-3 group-hover:scale-105">
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 16.5V8a2 2 0 012-2h3l1.5-2h5L16 6h3a2 2 0 012 2v8.5a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v6m-3-3h6" />
+                      </svg>
+                    </span>
+                    <span>
+                      <span className="block text-sm font-black text-navy-800">افزودن عکس از کتاب</span>
+                      <span className="mt-1 block text-xs leading-5 text-surface-500">تا ۸ عکس JPG، PNG یا WebP؛ هر فایل حداکثر ۵ مگابایت</span>
+                    </span>
+                  </button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
               </div>
             </div>
+          )}
 
-            {/* Year & Edition */}
-            <div className="grid grid-cols-2 gap-4">
+          {currentStep === 2 && (
+            <div className="space-y-8">
               <div>
-                <label className="text-sm font-medium text-surface-700 mb-1.5 block">سال چاپ</label>
-                <div className="relative">
+                <FormLabel title="وضعیت کلی کتاب" hint="گزینه‌ای را انتخاب کنید که با ظاهر واقعی کتاب تطابق دارد" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {BOOK_CONDITIONS.map((item) => (
+                    <label
+                      key={item.id}
+                      className={cn(
+                        "relative flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-all",
+                        condition === item.id
+                          ? "border-navy-500 bg-navy-50 shadow-[0_8px_22px_-16px_rgba(30,58,138,0.8)]"
+                          : "border-surface-200 bg-white hover:border-navy-200"
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="condition"
+                        value={item.id}
+                        checked={condition === item.id}
+                        onChange={() => setCondition(item.id)}
+                        className="mt-1 h-4 w-4 accent-navy-700"
+                      />
+                      <span>
+                        <span className="block text-sm font-black text-navy-800">{item.label}</span>
+                        <span className="mt-1 block text-xs leading-5 text-surface-500">{item.description}</span>
+                      </span>
+                      {condition === item.id && (
+                        <span className="absolute left-3 top-3 h-2 w-2 rounded-full bg-accent-500" />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-5 rounded-2xl border border-surface-100 bg-surface-50/70 p-4 sm:grid-cols-2 sm:p-5">
+                <div>
+                  <label className="mb-1.5 block text-sm font-bold text-surface-700" htmlFor="print-year">سال چاپ</label>
                   <select
+                    id="print-year"
                     value={year}
-                    onChange={(e) => setYear(e.target.value)}
-                    className="w-full rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm text-surface-800 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none cursor-pointer appearance-none pr-10"
+                    onChange={(event) => setYear(event.target.value)}
+                    className="h-12 w-full rounded-2xl border border-surface-200 bg-white px-4 text-sm text-surface-800 outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
                   >
-                    {Array.from({ length: 27 }, (_, i) => 1406 - i).map((y) => (
-                      <option key={y} value={y}>{toPersianDigits(y)}</option>
+                    {Array.from({ length: 27 }, (_, index) => 1406 - index).map((item) => (
+                      <option key={item} value={item}>{toPersianDigits(item)}</option>
                     ))}
                   </select>
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                </div>
+                <Input
+                  label="ویرایش کتاب (اختیاری)"
+                  type="number"
+                  placeholder="مثال: ۳"
+                  value={edition}
+                  onChange={(event) => setEdition(event.target.value)}
+                  className="h-12 rounded-2xl"
+                />
+              </div>
+
+              <div>
+                <FormLabel title="جزئیات وضعیت" hint="این بخش اعتماد خریدار را بیشتر می‌کند؛ دقیق انتخاب کنید" />
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {[
+                    { label: "هایلایت شده", value: highlighting, setter: setHighlighting },
+                    { label: "یادداشت دست‌نویس", value: handwrittenNotes, setter: setHandwrittenNotes },
+                    { label: "صفحات پاره", value: tornPages, setter: setTornPages },
+                    { label: "صفحات گمشده", value: missingPages, setter: setMissingPages },
+                    { label: "تست‌ها پاسخ داده شده", value: answersCompleted, setter: setAnswersCompleted },
+                    { label: "جلد آسیب‌دیده", value: coverDamaged, setter: setCoverDamaged },
+                    { label: "دارای سی‌دی", value: hasCd, setter: setHasCd },
+                    { label: "دارای کتاب تکمیلی", value: hasSupplement, setter: setHasSupplement },
+                  ].map((item) => (
+                    <label
+                      key={item.label}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 text-sm font-bold transition-all",
+                        item.value
+                          ? "border-accent-200 bg-accent-50 text-accent-800"
+                          : "border-surface-200 bg-white text-surface-600 hover:border-surface-300"
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item.value}
+                        onChange={(event) => item.setter(event.target.checked)}
+                        className="h-4 w-4 rounded accent-accent-500"
+                      />
+                      {item.label}
+                    </label>
+                  ))}
                 </div>
               </div>
-              <Input
-                label="ویرایش (اختیاری)"
-                type="number"
-                placeholder="ویرایش"
-                value={edition}
-                onChange={(e) => setEdition(e.target.value)}
-              />
             </div>
+          )}
 
-            {/* Condition defects */}
-            <div>
-              <label className="text-sm font-medium text-surface-700 mb-3 block">جزئیات وضعیت</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: "هایلایت شده", value: highlighting, setter: setHighlighting },
-                  { label: "یادداشت دست‌نویس", value: handwrittenNotes, setter: setHandwrittenNotes },
-                  { label: "صفحات پاره", value: tornPages, setter: setTornPages },
-                  { label: "صفحات گمشده", value: missingPages, setter: setMissingPages },
-                  { label: "تست‌ها پاسخ داده شده", value: answersCompleted, setter: setAnswersCompleted },
-                  { label: "جلد آسیب‌دیده", value: coverDamaged, setter: setCoverDamaged },
-                  { label: "سی‌دی دارد", value: hasCd, setter: setHasCd },
-                  { label: "کتاب تکمیلی دارد", value: hasSupplement, setter: setHasSupplement },
-                ].map((item) => (
-                  <label
-                    key={item.label}
-                    className={cn(
-                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-all text-sm",
-                      item.value
-                        ? "bg-accent-50 border-accent-200 text-accent-700"
-                        : "bg-white border-surface-200 text-surface-600 hover:border-surface-300"
+          {currentStep === 3 && (
+            <div className="space-y-8">
+              <div className="rounded-3xl bg-navy-800 p-5 text-white sm:p-6">
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-black">قیمت‌گذاری منصفانه</p>
+                    <p className="mt-1 text-xs leading-5 text-white/60">قیمت مناسب، شانس فروش سریع‌تر را بیشتر می‌کند.</p>
+                  </div>
+                  <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/80">تومان</span>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Input
+                    label="قیمت کتاب نو"
+                    type="number"
+                    placeholder="۵۰۰٬۰۰۰"
+                    value={originalPrice}
+                    onChange={(event) => setOriginalPrice(event.target.value)}
+                    className="h-12 rounded-2xl border-white/10 bg-white/95"
+                  />
+                  <Input
+                    label="قیمت پیشنهادی شما"
+                    type="number"
+                    placeholder="۲۵۰٬۰۰۰"
+                    value={price}
+                    onChange={(event) => setPrice(event.target.value)}
+                    className="h-12 rounded-2xl border-white/10 bg-white/95"
+                  />
+                </div>
+                {(hasPrice || hasOriginalPrice) && (
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                    {hasOriginalPrice && (
+                      <span className="rounded-full bg-white/10 px-3 py-1.5">نو: {Number(originalPrice).toLocaleString("fa-IR")} تومان</span>
                     )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.value}
-                      onChange={(e) => item.setter(e.target.checked)}
-                      className="w-4 h-4 accent-accent-500 rounded"
-                    />
-                    {item.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Price & Location */}
-        {currentStep === 3 && (
-          <div className="space-y-5">
-            <h3 className="text-base font-bold text-navy-800">قیمت و ارسال</h3>
-
-            {/* Prices */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Input
-                  label="قیمت نو (تومان)"
-                  type="number"
-                  placeholder="۵۰۰,۰۰۰"
-                  value={originalPrice}
-                  onChange={(e) => setOriginalPrice(e.target.value)}
-                />
-                {originalPrice && Number(originalPrice) > 0 && (
-                  <p className="text-xs text-surface-500 mt-1">
-                    {toPersianDigits(Number(originalPrice).toLocaleString("fa-IR"))} تومان
-                  </p>
+                    {hasPrice && (
+                      <span className="rounded-full bg-accent-500 px-3 py-1.5 font-bold">فروش: {Number(price).toLocaleString("fa-IR")} تومان</span>
+                    )}
+                  </div>
                 )}
               </div>
-              <div>
-                <Input
-                  label="قیمت فروش (تومان)"
-                  type="number"
-                  placeholder="۲۵۰,۰۰۰"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                />
-                {price && Number(price) > 0 && (
-                  <p className="text-xs text-surface-500 mt-1">
-                    {toPersianDigits(Number(price).toLocaleString("fa-IR"))} تومان
-                  </p>
-                )}
-              </div>
-            </div>
 
-            {/* Discount preview */}
-            {originalPrice && price && Number(originalPrice) > 0 && Number(price) > 0 && (
-              <div className={cn(
-                "p-3 text-sm rounded-xl flex items-center gap-2",
-                Number(price) < Number(originalPrice) * 0.5
-                  ? "bg-success-50 text-success-700"
-                  : Number(price) < Number(originalPrice)
-                    ? "bg-accent-50 text-accent-700"
-                    : "bg-surface-50 text-surface-600"
-              )}>
-                {Number(price) < Number(originalPrice) * 0.5 && <span>🔥</span>}
-                {Number(price) < Number(originalPrice) ? (
-                  <span>
-                    {toPersianDigits(Math.round(((Number(originalPrice) - Number(price)) / Number(originalPrice)) * 100))}٪ تخفیف نسبت به قیمت نو
+              {hasOriginalPrice && hasPrice && (
+                <div
+                  className={cn(
+                    "flex items-center justify-between gap-4 rounded-2xl border p-4 text-sm",
+                    discount > 0
+                      ? "border-success-100 bg-success-50 text-success-800"
+                      : "border-danger-100 bg-danger-50 text-danger-700"
+                  )}
+                >
+                  <span className="font-bold">
+                    {discount > 0
+                      ? `${toPersianDigits(discount)}٪ ارزان‌تر از نسخه نو`
+                      : "قیمت فروش باید کمتر از قیمت کتاب نو باشد"}
                   </span>
-                ) : (
-                  <span>قیمت فروش باید کمتر از قیمت نو باشد</span>
-                )}
-              </div>
-            )}
+                  {discount > 0 && <span className="text-xl">↘</span>}
+                </div>
+              )}
 
-            {/* Province & City */}
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-surface-700 mb-1.5 block">استان</label>
-                <select
-                  value={province}
-                  onChange={(e) => { setProvince(e.target.value); setCity(""); }}
-                  className="w-full rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm text-surface-800 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none cursor-pointer"
-                >
-                  <option value="">انتخاب استان</option>
-                  {PROVINCES.map((p) => (
-                    <option key={p.id} value={p.name}>{p.name}</option>
-                  ))}
-                </select>
+                <FormLabel title="موقعیت کتاب" hint="برای محاسبه فاصله و هماهنگی تحویل" />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-bold text-surface-700" htmlFor="province">استان</label>
+                    <select
+                      id="province"
+                      value={province}
+                      onChange={(event) => {
+                        setProvince(event.target.value);
+                        setCity("");
+                      }}
+                      className="h-12 w-full rounded-2xl border border-surface-200 bg-white px-4 text-sm text-surface-800 outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
+                    >
+                      <option value="">انتخاب استان</option>
+                      {PROVINCES.map((item) => (
+                        <option key={item.id} value={item.name}>{item.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-bold text-surface-700" htmlFor="city">شهر</label>
+                    <select
+                      id="city"
+                      value={city}
+                      onChange={(event) => setCity(event.target.value)}
+                      disabled={!province}
+                      className="h-12 w-full rounded-2xl border border-surface-200 bg-white px-4 text-sm text-surface-800 outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 disabled:cursor-not-allowed disabled:bg-surface-50 disabled:text-surface-400"
+                    >
+                      <option value="">انتخاب شهر</option>
+                      {cities.map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-surface-700 mb-1.5 block">شهر</label>
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  disabled={!province}
-                  className="w-full rounded-xl border border-surface-200 bg-white px-4 py-2.5 text-sm text-surface-800 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none cursor-pointer disabled:opacity-50"
-                >
-                  <option value="">انتخاب شهر</option>
-                  {cities.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
-            {/* Shipping */}
-            <div>
-              <label className="text-sm font-medium text-surface-700 mb-3 block">نحوه ارسال</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all bg-white border-surface-200 hover:border-surface-300">
-                  <input
-                    type="checkbox"
+              <div>
+                <FormLabel title="روش تحویل" hint="می‌توانید هر دو روش را فعال کنید" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DeliveryOption
                     checked={shippingAvailable}
-                    onChange={(e) => setShippingAvailable(e.target.checked)}
-                    className="w-4 h-4 accent-navy-600 rounded"
+                    onChange={setShippingAvailable}
+                    icon="↗"
+                    title="ارسال پستی"
+                    description="پست پیشتاز یا تیپاکس"
                   />
-                  <div>
-                    <span className="text-sm font-medium text-surface-700">ارسال پستی</span>
-                    <p className="text-xs text-surface-500">ارسال از طریق پست پیشتاز یا تیپاکس</p>
-                  </div>
-                </label>
-                <label className="flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all bg-white border-surface-200 hover:border-surface-300">
-                  <input
-                    type="checkbox"
+                  <DeliveryOption
                     checked={pickupAvailable}
-                    onChange={(e) => setPickupAvailable(e.target.checked)}
-                    className="w-4 h-4 accent-navy-600 rounded"
+                    onChange={setPickupAvailable}
+                    icon="⌖"
+                    title="تحویل حضوری"
+                    description={`تحویل در ${city || "شهر شما"}`}
                   />
-                  <div>
-                    <span className="text-sm font-medium text-surface-700">تحویل حضوری</span>
-                    <p className="text-xs text-surface-500">تحویل در شهر {city || "شما"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 4 && (
+            <div className="space-y-8">
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-4">
+                  <label className="text-sm font-bold text-surface-700" htmlFor="description">توضیحات تکمیلی</label>
+                  <span className="text-xs text-surface-400">{toPersianDigits(description.length)} / ۵۰۰</span>
+                </div>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value.slice(0, 500))}
+                  placeholder="مثلاً: جلد کتاب سالم است، فقط چند صفحه اول با مداد علامت‌گذاری شده..."
+                  rows={6}
+                  className="w-full resize-none rounded-2xl border border-surface-200 bg-white px-4 py-3 text-sm leading-7 text-surface-800 outline-none transition placeholder:text-surface-400 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
+                />
+                <p className="mt-2 text-xs leading-5 text-surface-500">جزئیاتی را بنویسید که در عکس‌ها مشخص نیست؛ صداقت، فروش را سریع‌تر می‌کند.</p>
+              </div>
+
+              <div>
+                <FormLabel title="پیش‌نمایش آگهی" hint="خریدار اطلاعات اصلی را تقریباً به این شکل می‌بیند" />
+                <div className="overflow-hidden rounded-3xl border border-surface-200 bg-white shadow-[0_16px_45px_-30px_rgba(15,23,42,0.45)] sm:flex">
+                  <div className="relative aspect-[16/10] bg-[linear-gradient(135deg,#f8fafc,#eef2ff)] sm:aspect-auto sm:w-52 sm:shrink-0">
+                    {images[0] ? (
+                      <span className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${images[0]})` }} role="img" aria-label="تصویر اصلی آگهی" />
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-surface-400">
+                        <svg className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5.5A1.5 1.5 0 015.5 4H18v16H5.5A1.5 1.5 0 014 18.5v-13zM8 4v16" />
+                        </svg>
+                        <span className="mt-2 text-xs">بدون تصویر</span>
+                      </div>
+                    )}
                   </div>
-                </label>
+                  <div className="flex flex-1 flex-col justify-between p-5 sm:p-6">
+                    <div>
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {selectedCondition && <span className="rounded-full bg-success-50 px-2.5 py-1 text-[11px] font-bold text-success-700">{selectedCondition.label}</span>}
+                        {publisher && <span className="rounded-full bg-navy-50 px-2.5 py-1 text-[11px] font-bold text-navy-700">{publisher}</span>}
+                      </div>
+                      <h3 className="text-lg font-black leading-8 text-navy-900">{title || "عنوان کتاب شما"}</h3>
+                      <p className="mt-1 text-sm text-surface-500">{author || "نام نویسنده"}</p>
+                    </div>
+                    <div className="mt-6 flex items-end justify-between gap-4 border-t border-surface-100 pt-4">
+                      <div>
+                        <span className="block text-xs text-surface-400">قیمت فروش</span>
+                        <strong className="mt-1 block text-lg font-black text-navy-800">{hasPrice ? Number(price).toLocaleString("fa-IR") : "—"} <small className="text-xs">تومان</small></strong>
+                      </div>
+                      <span className="text-xs text-surface-500">{city || "شهر"}، {province || "استان"}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Step 4: Description */}
-        {currentStep === 4 && (
-          <div className="space-y-5">
-            <h3 className="text-base font-bold text-navy-800">توضیحات</h3>
+        <footer className="flex items-center justify-between gap-3 border-t border-surface-100 bg-surface-50/70 px-5 py-4 sm:px-7 sm:py-5">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setCurrentStep((step) => Math.max(1, step - 1) as Step)}
+            disabled={currentStep === 1}
+            className="min-w-28"
+          >
+            مرحله قبل
+          </Button>
 
+          {currentStep < 4 ? (
+            <Button
+              type="button"
+              onClick={() => setCurrentStep((step) => Math.min(4, step + 1) as Step)}
+              disabled={!canProceed()}
+              className="min-w-32"
+            >
+              ادامه
+              <span aria-hidden="true">←</span>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="accent"
+              onClick={handleSubmit}
+              isLoading={isLoading}
+              disabled={!canProceed()}
+              className="min-w-36"
+            >
+              انتشار آگهی
+            </Button>
+          )}
+        </footer>
+      </section>
+
+      <aside className="order-first lg:order-none lg:sticky lg:top-24">
+        <div className="rounded-[1.75rem] border border-surface-200/80 bg-white p-4 shadow-[0_16px_45px_-34px_rgba(15,23,42,0.38)] sm:p-5">
+          <div className="mb-4 flex items-end justify-between">
             <div>
-              <label className="text-sm font-medium text-surface-700 mb-1.5 block">توضیحات اختیاری</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="اطلاعات اضافی درباره کتاب، مثلاً وضعیت جلد، یادداشت‌ها، یا هر نکته دیگری..."
-                rows={5}
-                className="w-full rounded-xl border border-surface-200 bg-white px-4 py-3 text-sm text-surface-800 placeholder:text-surface-400 focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20 focus:outline-none resize-none"
-              />
-              <p className="text-xs text-surface-400 mt-1">حداکثر ۵۰۰ کاراکتر</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-surface-400">مراحل آگهی</p>
+              <p className="mt-1 text-sm font-black text-navy-900">{toPersianDigits(Math.round(progress))}٪ تکمیل شده</p>
             </div>
+            <span className="text-xs font-bold text-accent-600">{toPersianDigits(currentStep)} / {toPersianDigits(steps.length)}</span>
+          </div>
+          <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-surface-100">
+            <div className="h-full rounded-full bg-accent-500 transition-all duration-500" style={{ width: `${progress}%` }} />
+          </div>
 
-            {/* Summary */}
-            <div className="bg-surface-50 rounded-xl p-4 space-y-3">
-              <h4 className="text-sm font-bold text-navy-800">خلاصه آگهی</h4>
-              <div className="text-sm text-surface-600 space-y-1">
-                <p><span className="font-medium">عنوان:</span> {title}</p>
-                <p><span className="font-medium">نویسنده:</span> {author}</p>
-                <p><span className="font-medium">ناشر:</span> {publisher}</p>
-                <p><span className="font-medium">وضعیت:</span> {BOOK_CONDITIONS.find((c) => c.id === condition)?.label}</p>
-                <p><span className="font-medium">قیمت فروش:</span> {Number(price).toLocaleString("fa-IR")} تومان</p>
-                <p><span className="font-medium">مکان:</span> {city}، {province}</p>
-              </div>
+          <div className="grid grid-cols-4 gap-1 lg:block lg:space-y-1">
+            {steps.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => item.id < currentStep && setCurrentStep(item.id)}
+                disabled={item.id > currentStep}
+                className={cn(
+                  "group flex min-w-0 flex-col items-center gap-2 rounded-xl px-1 py-2 text-center transition lg:flex-row lg:px-2 lg:py-2.5 lg:text-right",
+                  currentStep === item.id && "bg-navy-50",
+                  item.id < currentStep && "cursor-pointer hover:bg-surface-50",
+                  item.id > currentStep && "cursor-default"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-black transition",
+                    currentStep === item.id && "bg-navy-700 text-white",
+                    item.id < currentStep && "bg-success-50 text-success-700",
+                    item.id > currentStep && "bg-surface-100 text-surface-400"
+                  )}
+                >
+                  {item.id < currentStep ? "✓" : toPersianDigits(item.id)}
+                </span>
+                <span className="min-w-0">
+                  <span className={cn("block truncate text-[11px] font-bold lg:text-xs", currentStep === item.id ? "text-navy-800" : "text-surface-500")}>{item.shortLabel}</span>
+                  <span className="mt-0.5 hidden text-[10px] leading-4 text-surface-400 lg:block">{item.description}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 hidden overflow-hidden rounded-[1.75rem] bg-navy-900 text-white lg:block">
+          <div className="border-b border-white/10 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-bold text-white/55">پیش‌نویس زنده</p>
+              <span className="h-2 w-2 rounded-full bg-accent-400 shadow-[0_0_0_4px_rgba(249,115,22,0.12)]" />
+            </div>
+            <h3 className="mt-4 line-clamp-2 text-base font-black leading-7">{title || "عنوان کتاب اینجا دیده می‌شود"}</h3>
+            <p className="mt-1 truncate text-xs text-white/50">{author || "هنوز نویسنده را وارد نکرده‌اید"}</p>
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-x-reverse divide-white/10 border-b border-white/10">
+            <div className="p-4">
+              <span className="block text-[10px] text-white/45">عکس‌ها</span>
+              <strong className="mt-1 block text-sm">{toPersianDigits(images.length)} تصویر</strong>
+            </div>
+            <div className="p-4">
+              <span className="block text-[10px] text-white/45">موقعیت</span>
+              <strong className="mt-1 block truncate text-sm">{city || "انتخاب نشده"}</strong>
             </div>
           </div>
-        )}
-      </div>
+          <div className="p-5">
+            <span className="block text-[10px] text-white/45">قیمت پیشنهادی</span>
+            <strong className="mt-1 block text-lg font-black text-accent-300">{hasPrice ? Number(price).toLocaleString("fa-IR") : "—"} <small className="text-[10px] text-white/50">تومان</small></strong>
+          </div>
+        </div>
 
-      {/* Navigation */}
-      <div className="border-t border-surface-100 px-6 py-4 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          onClick={() => setCurrentStep((s) => Math.max(1, s - 1) as Step)}
-          disabled={currentStep === 1}
-        >
-          مرحله قبل
-        </Button>
-
-        {currentStep < 4 ? (
-          <Button
-            onClick={() => setCurrentStep((s) => Math.min(4, s + 1) as Step)}
-            disabled={!canProceed()}
-          >
-            مرحله بعد
-          </Button>
-        ) : (
-          <Button
-            variant="accent"
-            onClick={handleSubmit}
-            isLoading={isLoading}
-            disabled={!canProceed()}
-          >
-            انتشار آگهی
-          </Button>
-        )}
-      </div>
+        <div className="mt-4 hidden items-start gap-3 rounded-2xl border border-accent-100 bg-accent-50/70 p-4 lg:flex">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent-100 text-sm">✦</span>
+          <p className="text-xs leading-5 text-accent-900">آگهی‌های دارای عکس واضح و قیمت منصفانه، معمولاً زودتر پیام می‌گیرند.</p>
+        </div>
+      </aside>
     </div>
+  );
+}
+
+function FormLabel({
+  title,
+  hint,
+  className,
+}: {
+  title: string;
+  hint?: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn("mb-3", className)}>
+      <p className="text-sm font-black text-navy-900">{title}</p>
+      {hint && <p className="mt-1 text-xs leading-5 text-surface-500">{hint}</p>}
+    </div>
+  );
+}
+
+function DeliveryOption({
+  checked,
+  onChange,
+  icon,
+  title,
+  description,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  icon: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-all",
+        checked
+          ? "border-navy-300 bg-navy-50"
+          : "border-surface-200 bg-white hover:border-surface-300"
+      )}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="sr-only"
+      />
+      <span
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-bold",
+          checked ? "bg-navy-700 text-white" : "bg-surface-100 text-surface-500"
+        )}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-black text-navy-800">{title}</span>
+        <span className="mt-0.5 block truncate text-xs text-surface-500">{description}</span>
+      </span>
+      <span
+        className={cn(
+          "flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold",
+          checked ? "border-accent-500 bg-accent-500 text-white" : "border-surface-300 text-transparent"
+        )}
+      >
+        ✓
+      </span>
+    </label>
   );
 }
