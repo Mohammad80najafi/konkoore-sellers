@@ -106,6 +106,8 @@ export interface Listing {
   updatedAt: string;
 }
 
+export type SellerListing = Omit<Listing, "seller"> & { seller: string };
+
 // ===== Cart Item =====
 export interface CartItem {
   listing: Listing;

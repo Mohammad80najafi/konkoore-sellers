@@ -4,15 +4,16 @@ import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { connectDB } from "./mongodb";
 import User from "./models/User";
+import type { IUser } from "./models/User";
 import Session from "./models/Session";
 import Listing from "./models/Listing";
 import { normalizePhone } from "./auth-store";
 import { generateOtp, verifyOtp, canSendOtp, canVerifyOtp } from "./otp-store";
-import type { User as UserType } from "./types";
+import type { SellerListing, User as UserType } from "./types";
 import type { FieldOfStudy, Grade, BookConditionId } from "./constants";
 
 // Convert Mongoose document to plain User type
-function toUserType(doc: any): UserType {
+function toUserType(doc: IUser): UserType {
   return {
     _id: doc._id.toString(),
     name: doc.name,
@@ -302,37 +303,14 @@ export async function updateListingStatusAction(
 }
 
 // Get seller's listings
-export async function getSellerListings(sellerId: string): Promise<any[]> {
+export async function getSellerListings(sellerId: string): Promise<SellerListing[]> {
   try {
     await connectDB();
-    const listings = await Listing.find({ seller: sellerId }).sort({ createdAt: -1 });
-    return listings.map((l) => {
-      const obj = l.toObject();
-      return {
-        _id: obj._id.toString(),
-        book: obj.book,
-        seller: sellerId,
-        price: obj.price,
-        originalPrice: obj.originalPrice,
-        condition: obj.condition,
-        images: obj.images,
-        description: obj.description,
-        year: obj.year,
-        edition: obj.edition,
-        city: obj.city,
-        province: obj.province,
-        shippingAvailable: obj.shippingAvailable,
-        pickupAvailable: obj.pickupAvailable,
-        isBundle: obj.isBundle,
-        bundleBooks: obj.bundleBooks,
-        priceIndicator: obj.priceIndicator,
-        views: obj.views,
-        favorites: obj.favorites,
-        status: obj.status,
-        createdAt: obj.createdAt instanceof Date ? obj.createdAt.toISOString() : String(obj.createdAt),
-        updatedAt: obj.updatedAt instanceof Date ? obj.updatedAt.toISOString() : String(obj.updatedAt),
-      };
-    });
+    const listings = await Listing.find({ seller: sellerId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return JSON.parse(JSON.stringify(listings)) as SellerListing[];
   } catch (error) {
     console.error("Get seller listings error:", error);
     return [];
