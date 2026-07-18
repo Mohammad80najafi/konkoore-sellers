@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { upload } from "@vercel/blob/client";
 import {
   useEffect,
   useRef,
@@ -11,6 +10,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { cn } from "@/lib/utils";
+import { storeImage } from "@/lib/upload-image";
 import { connectSocket } from "@/lib/socket-client";
 import type {
   ChatMessage,
@@ -280,11 +280,7 @@ export default function MessagesWorkspace({
 
     setUploading(true);
     try {
-      const blob = await upload(`uploads/${file.name}`, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-      });
-      setImage(blob.url);
+      setImage(await storeImage(file));
     } catch {
       setError("تصویر بارگذاری نشد. دوباره تلاش کنید.");
     } finally {

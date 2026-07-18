@@ -2,10 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { upload } from "@vercel/blob/client";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { cn, toPersianDigits } from "@/lib/utils";
+import { storeImage } from "@/lib/upload-image";
 import {
   BOOK_CONDITIONS,
   FIELDS_OF_STUDY,
@@ -116,11 +116,8 @@ export default function CreateListingForm() {
       if (file.size > 5 * 1024 * 1024) continue;
 
       try {
-        const blob = await upload(`uploads/${file.name}`, file, {
-          access: "public",
-          handleUploadUrl: "/api/upload",
-        });
-        setImages((current) => [...current, blob.url]);
+        const url = await storeImage(file);
+        setImages((current) => [...current, url]);
       } catch {
         setError("آپلود تصویر انجام نشد. دوباره تلاش کنید.");
       }
