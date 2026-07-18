@@ -16,7 +16,7 @@ import type {
 } from "./message-types";
 
 const MAX_MESSAGE_LENGTH = 2000;
-const UPLOAD_PATH = /^\/uploads\/[a-zA-Z0-9._-]+$/;
+const UPLOAD_PATH = /^(?:\/uploads\/[a-zA-Z0-9._-]+|https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/uploads\/[^?#]+)$/;
 
 type Reply = (result: SocketResult) => void;
 

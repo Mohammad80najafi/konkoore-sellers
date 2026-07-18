@@ -344,6 +344,7 @@ export async function createListingAction(data: {
         grade: data.grade as Grade,
         subject: data.subject,
         originalPrice: 0,
+        coverImage: data.images?.[0]?.url || "",
       },
       seller: sellerId,
       price: 0,

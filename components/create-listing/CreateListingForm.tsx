@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { cn, toPersianDigits } from "@/lib/utils";
@@ -113,18 +114,15 @@ export default function CreateListingForm() {
 
     for (const file of filesToProcess) {
       if (file.size > 5 * 1024 * 1024) continue;
-      const formData = new FormData();
-      formData.append("file", file);
 
       try {
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
+        const blob = await upload(`uploads/${file.name}`, file, {
+          access: "public",
+          handleUploadUrl: "/api/upload",
         });
-        const data = await response.json();
-        if (data.url) setImages((current) => [...current, data.url]);
+        setImages((current) => [...current, blob.url]);
       } catch {
-        // A failed image is skipped so the remaining files can still upload.
+        setError("آپلود تصویر انجام نشد. دوباره تلاش کنید.");
       }
     }
 

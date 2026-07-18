@@ -1,39 +1,31 @@
-import { NextRequest } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { getCurrentUser } from "@/lib/auth-actions";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
+const MAX_SIZE = 5 * 1024 * 1024;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const UPLOAD_PATH = /^uploads\/[^/\\]{1,200}$/;
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const body = (await request.json()) as HandleUploadBody;
+    const result = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname) => {
+        if (!(await getCurrentUser())) throw new Error("Unauthorized");
+        if (!UPLOAD_PATH.test(pathname)) throw new Error("Invalid upload path");
 
-    if (!file) {
-      return Response.json({ error: "No file uploaded" }, { status: 400 });
-    }
+        return {
+          allowedContentTypes: ALLOWED_TYPES,
+          maximumSizeInBytes: MAX_SIZE,
+          addRandomSuffix: true,
+        };
+      },
+    });
 
-    if (!ALLOWED.includes(file.type)) {
-      return Response.json({ error: "Invalid file type" }, { status: 400 });
-    }
-
-    if (file.size > MAX_SIZE) {
-      return Response.json({ error: "File too large (max 5MB)" }, { status: 400 });
-    }
-
-    await mkdir(UPLOAD_DIR, { recursive: true });
-
-    const ext = file.name.split(".").pop() || "jpg";
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    await writeFile(path.join(UPLOAD_DIR, filename), buffer);
-
-    return Response.json({ url: `/uploads/${filename}` });
+    return Response.json(result);
   } catch (error) {
     console.error("Upload error:", error);
-    return Response.json({ error: "Upload failed" }, { status: 500 });
+    return Response.json({ error: "Upload failed" }, { status: 400 });
   }
 }

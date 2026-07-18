@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.jsdelivr.net",
       },
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+        port: "",
+        pathname: "/uploads/**",
+        search: "",
+      },
     ],
   },
 };

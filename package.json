@@ -10,6 +10,7 @@
     "seed": "tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
+    "@vercel/blob": "^2.6.1",
     "mongoose": "^9.7.4",
     "next": "16.2.10",
     "react": "19.2.4",

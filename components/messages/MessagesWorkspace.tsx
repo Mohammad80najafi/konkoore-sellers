@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 import {
   useEffect,
   useRef,
@@ -279,15 +280,11 @@ export default function MessagesWorkspace({
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const blob = await upload(`uploads/${file.name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
       });
-      const body = (await response.json()) as { url?: string; error?: string };
-      if (!response.ok || !body.url) throw new Error(body.error);
-      setImage(body.url);
+      setImage(blob.url);
     } catch {
       setError("تصویر بارگذاری نشد. دوباره تلاش کنید.");
     } finally {
