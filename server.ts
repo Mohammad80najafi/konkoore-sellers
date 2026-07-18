@@ -19,6 +19,7 @@ app.prepare().then(() => {
 
   const io = new Server(httpServer, {
     path: "/api/socketio",
+    addTrailingSlash: false,
     cors: { origin: "*" },
   });
 

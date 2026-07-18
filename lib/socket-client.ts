@@ -8,6 +8,8 @@ export function getSocket(): Socket {
   if (!socket) {
     socket = io(window.location.origin, {
       path: "/api/socketio",
+      addTrailingSlash: false,
+      transports: ["websocket"],
       autoConnect: false,
       reconnection: true,
       reconnectionDelayMax: 5000,

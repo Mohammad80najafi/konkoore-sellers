@@ -245,7 +245,7 @@ export default function MessagesWorkspace({
   ]);
 
   useEffect(() => {
-    if (!activeConversationId || connection !== "offline") return;
+    if (!activeConversationId) return;
     const poll = async () => {
       try {
         const response = await fetch(`/api/messages/${activeConversationId}`);
@@ -256,7 +256,9 @@ export default function MessagesWorkspace({
         // The next reconnect or polling interval will retry.
       }
     };
-    void poll();
+    // ponytail: polling covers delivery between separate Vercel function instances;
+    // replace it with a shared Socket.IO adapter if global presence becomes necessary.
+    if (connection === "offline") void poll();
     const interval = window.setInterval(poll, 10000);
     return () => window.clearInterval(interval);
   }, [activeConversationId, connection]);
