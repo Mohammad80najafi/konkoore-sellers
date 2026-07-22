@@ -225,7 +225,7 @@ export default function MarketplacePage({ initialListings = [] }: { initialListi
                     disabled={currentPage === 1}
                     className="p-2.5 rounded-xl text-surface-500 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:shadow-sm"
                   >
-                    <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
